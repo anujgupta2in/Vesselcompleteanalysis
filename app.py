@@ -235,52 +235,52 @@ if uploaded_file is not None:
             st.metric("AE3", value=aux_running_hours['AE3'] if aux_running_hours['AE3'] != "Not Available" else "N/A",
                       help="Auxiliary Engine 3 Running Hours")
 
-        # Initialize Export Handler
-        export_handler = ExportHandler(data, engine_type)
+        # # Initialize Export Handler
+        # export_handler = ExportHandler(data, engine_type)
 
-        # Add export buttons
-        st.subheader("Export Options")
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            if st.button("Export Full Report"):
-                export_link = export_handler.generate_full_report(
-                    main_engine_data, aux_engine_data, pivot_table, 
-                    cylinder_pivot_table, component_status, missing_count,
-                    main_engine_running_hours, aux_running_hours
-                )
-                st.success(f"Report generated successfully!")
-                st.download_button(
-                    label="Download Full Report",
-                    data=export_link,
-                    file_name=f"{vessel_name}_full_report.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-        with col2:
-            if st.button("Export Main Engine Report"):
-                me_export = export_handler.generate_main_engine_report(
-                    main_engine_data, pivot_table, 
-                    cylinder_pivot_table, component_status, missing_count,
-                    main_engine_running_hours
-                )
-                st.success(f"Main Engine Report generated successfully!")
-                st.download_button(
-                    label="Download Main Engine Report",
-                    data=me_export,
-                    file_name=f"{vessel_name}_main_engine_report.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-        with col3:
-            if st.button("Export Auxiliary Engine Report"):
-                ae_export = export_handler.generate_auxiliary_engine_report(
-                    aux_engine_data, aux_running_hours
-                )
-                st.success(f"Auxiliary Engine Report generated successfully!")
-                st.download_button(
-                    label="Download Auxiliary Engine Report",
-                    data=ae_export,
-                    file_name=f"{vessel_name}_auxiliary_engine_report.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+        # # Add export buttons
+        # st.subheader("Export Options")
+        # col1, col2, col3 = st.columns(3)
+        # with col1:
+        #     if st.button("Export Full Report"):
+        #         export_link = export_handler.generate_full_report(
+        #             main_engine_data, aux_engine_data, pivot_table, 
+        #             cylinder_pivot_table, component_status, missing_count,
+        #             main_engine_running_hours, aux_running_hours
+        #         )
+        #         st.success(f"Report generated successfully!")
+        #         st.download_button(
+        #             label="Download Full Report",
+        #             data=export_link,
+        #             file_name=f"{vessel_name}_full_report.xlsx",
+        #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        #         )
+        # with col2:
+        #     if st.button("Export Main Engine Report"):
+        #         me_export = export_handler.generate_main_engine_report(
+        #             main_engine_data, pivot_table, 
+        #             cylinder_pivot_table, component_status, missing_count,
+        #             main_engine_running_hours
+        #         )
+        #         st.success(f"Main Engine Report generated successfully!")
+        #         st.download_button(
+        #             label="Download Main Engine Report",
+        #             data=me_export,
+        #             file_name=f"{vessel_name}_main_engine_report.xlsx",
+        #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        #         )
+        # with col3:
+        #     if st.button("Export Auxiliary Engine Report"):
+        #         ae_export = export_handler.generate_auxiliary_engine_report(
+        #             aux_engine_data, aux_running_hours
+        #         )
+        #         st.success(f"Auxiliary Engine Report generated successfully!")
+        #         st.download_button(
+        #             label="Download Auxiliary Engine Report",
+        #             data=ae_export,
+        #             file_name=f"{vessel_name}_auxiliary_engine_report.xlsx",
+        #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        #         )
 
         # Tabs for analysis
         def switch_tab(tab_index):
