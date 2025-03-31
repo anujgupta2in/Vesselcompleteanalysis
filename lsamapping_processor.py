@@ -7,6 +7,7 @@ class LSAMappingProcessor:
         self.pivot_table_resultlsaJobs = pd.DataFrame()
         self.pivot_table_resultlsaJobstotal = pd.DataFrame()
         self.missinglsajobsresult = pd.DataFrame()
+        self.pivot_table_resultlsaJobs_styled = None  # Optional: for UI display
 
     def safe_convert_to_string(self, value):
         try:
@@ -15,7 +16,7 @@ class LSAMappingProcessor:
             return ''
 
     def format_blank(self, val):
-        return "" if val == 0 else val
+        return "" if val in [0, '0', 0.0] else val
 
     def highlight_one(self, val):
         if val == 1:
@@ -36,6 +37,9 @@ class LSAMappingProcessor:
             )
             self.result_dflsa.reset_index(drop=True, inplace=True)
 
+            # Widen Title column for better display (optional)
+            self.result_dflsa['Title'] = self.result_dflsa['Title'].apply(lambda x: f"{x:<50}")
+
             pivot_raw = self.result_dflsa.pivot_table(
                 index='Title',
                 columns='Function',
@@ -43,16 +47,18 @@ class LSAMappingProcessor:
                 aggfunc='count'
             ).fillna(0).astype(int)
 
-            self.pivot_table_resultlsaJobs = pivot_raw.applymap(self.format_blank)
-            self.pivot_table_resultlsaJobs = self.pivot_table_resultlsaJobs.style.applymap(self.highlight_one)
+            self.pivot_table_resultlsaJobs = pivot_raw.replace(0, '').map(self.format_blank)
+
+            # Optional: keep styled version for UI display
+            self.pivot_table_resultlsaJobs_styled = pivot_raw.style.applymap(self.highlight_one)
 
             total_raw = self.result_dflsa.pivot_table(
                 index='Title',
                 values='Job Codecopy',
                 aggfunc='count'
-            ).sort_values(by='Job Codecopy', ascending=False).fillna(0).astype(int)
+            ).fillna(0).astype(int).sort_values(by='Job Codecopy', ascending=False)
 
-            self.pivot_table_resultlsaJobstotal = total_raw.applymap(self.format_blank)
+            self.pivot_table_resultlsaJobstotal = total_raw.replace(0, '').map(self.format_blank)
 
             self.missinglsajobsresult = dflsa[~dflsa['UI Job Code'].isin(dfcopy['Job Codecopy'])].copy()
             self.missinglsajobsresult.reset_index(drop=True, inplace=True)
