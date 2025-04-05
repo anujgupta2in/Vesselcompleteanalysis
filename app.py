@@ -205,11 +205,11 @@ if uploaded_file is not None:
         if ref_sheet is None:
             st.warning("No reference sheet uploaded. Some analysis features will be limited.")
             (main_engine_data, aux_engine_data, main_engine_running_hours, aux_running_hours,
-             pivot_table, ref_pivot_table, missing_jobs, cylinder_pivot_table, pivot_table_filteredAE,
+             pivot_table, ref_pivot_table, missing_jobs, styled_cylinder_pivot_table, pivot_table_filteredAE,
              component_status, missing_count) = process_engine_data(data, engine_type=engine_type)
         else:
             (main_engine_data, aux_engine_data, main_engine_running_hours, aux_running_hours,
-             pivot_table, ref_pivot_table, missing_jobs, cylinder_pivot_table, pivot_table_filteredAE,
+             pivot_table, ref_pivot_table, missing_jobs, styled_cylinder_pivot_table, pivot_table_filteredAE,
              component_status, missing_count) = process_engine_data(data, ref_sheet, engine_type)
 
         # Get auxiliary engine data
@@ -245,7 +245,7 @@ if uploaded_file is not None:
         #     if st.button("Export Full Report"):
         #         export_link = export_handler.generate_full_report(
         #             main_engine_data, aux_engine_data, pivot_table, 
-        #             cylinder_pivot_table, component_status, missing_count,
+        #             styled_cylinder_pivot_table, component_status, missing_count,
         #             main_engine_running_hours, aux_running_hours
         #         )
         #         st.success(f"Report generated successfully!")
@@ -259,7 +259,7 @@ if uploaded_file is not None:
         #     if st.button("Export Main Engine Report"):
         #         me_export = export_handler.generate_main_engine_report(
         #             main_engine_data, pivot_table, 
-        #             cylinder_pivot_table, component_status, missing_count,
+        #             styled_cylinder_pivot_table, component_status, missing_count,
         #             main_engine_running_hours
         #         )
         #         st.success(f"Main Engine Report generated successfully!")
@@ -433,8 +433,8 @@ if uploaded_file is not None:
             
             # Add Cylinder Unit Analysis
             st.subheader("Main Engine Cylinder Unit Analysis")
-            if cylinder_pivot_table is not None:
-                st.dataframe(cylinder_pivot_table, use_container_width=True)
+            if styled_cylinder_pivot_table is not None:
+                st.dataframe(styled_cylinder_pivot_table, use_container_width=True)
 
             if ref_sheet is not None and ref_pivot_table is not None:
                 st.subheader("Reference Analysis Main Engine")
