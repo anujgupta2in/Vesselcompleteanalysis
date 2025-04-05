@@ -279,15 +279,15 @@ def process_engine_data(data, ref_sheet_path=None, engine_type=None):
         main_engine_filtered.loc[:, 'Cylinder Unit'] = main_engine_filtered['Sub Component Location'].str.extract(r'(Cylinder Unit#\d+)')
         main_engine_filtered.loc[:, 'Sub Components'] = main_engine_filtered['Sub Component Location'].str.extract(r'Cylinder Unit#\d+ > (.*)')
 
-    # Create cylinder unit pivot table
-cylinder_pivot_table = main_engine_filtered.pivot_table(
-    index='Cylinder Unit',
-    columns='Sub Components',
-    values='Job Code',
-    aggfunc='count',
-    fill_value=0
-).reset_index()
-cylinder_pivot_table.columns.name = None
+            # Create cylinder unit pivot table
+        cylinder_pivot_table = main_engine_filtered.pivot_table(
+            index='Cylinder Unit',
+            columns='Sub Components',
+            values='Job Code',
+            aggfunc='count',
+            fill_value=0
+        ).reset_index()
+        cylinder_pivot_table.columns.name = None
 
 
 
