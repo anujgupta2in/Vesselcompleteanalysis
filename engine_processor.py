@@ -289,21 +289,6 @@ def process_engine_data(data, ref_sheet_path=None, engine_type=None):
         ).reset_index()
         cylinder_pivot_table.columns.name = None
 
-# === Conditional Formatting Function ===
-def highlight_cylinder_cells(val):
-    if val == 1:
-        return 'background-color: green; color: white'
-    elif val == 0:
-        return 'background-color: red; color: white'
-    return ''
-
-# === Apply styles to the pivot table ===
-styled_cylinder_pivot_table = cylinder_pivot_table.style.applymap(
-    highlight_cylinder_cells,
-    subset=cylinder_pivot_table.columns[1:]  # Skip 'Cylinder Unit'
-)
-
-
 
 
         # Get running hours for Main Engine
