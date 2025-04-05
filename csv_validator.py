@@ -74,17 +74,23 @@ class CSVValidator:
         engine_entries = df[df['Machinery Location'].str.contains('Main Engine|Auxiliary Engine', case=False, na=False)]
         valid_patterns = [
             r'^Main Engine[\s-]*#?\d+$',
-            r'^Auxiliary Engine[\s-]*#?\d+$',
             r'^Main Engine[\s-]*MC[\s-]*#?\d+$',
             r'^Main Engine[\s-]*ME[\s-]*C[\s-]*II[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*ME[\s-]*C[\s-]*GI[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*ME[\s-]*C[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*ME[\s-]*B[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*RT[\s-]*FLEX[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*RTFLEX[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*RTA[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*UEC[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*W[\s-]*#?\d+$',
+            r'^Main Engine[\s-]*WX[\s-]*#?\d+$',
             r'^Main Engine[\s-]*No\d+$',
+            
+            r'^Auxiliary Engine[\s-]*#?\d+$',
             r'^Auxiliary Engine[\s-]*No\d+$',
-            r'^Main Engine[\s-]*RTFLEX[\s-]*#?\d+$',   # Added for RTFLEX
-            r'^Main Engine[\s-]*RT-FLEX[\s-]*#?\d+$',  # Optional: covers 'RT-FLEX'
-            r'^Main Engine[\s-]*RTA[\s-]*#?\d+$',      # Optional: for RTA models
-            r'^Main Engine[\s-]*UEC[\s-]*#?\d+$',      # Optional: for UEC models
-            r'^Main Engine[\s-]*WX[\s-]*#?\d+$',       # Optional: for WinGD WX
         ]
+
 
       
         import re
