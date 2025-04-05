@@ -303,7 +303,7 @@ styled_cylinder_pivot_table = cylinder_pivot_table.style.applymap(
     subset=cylinder_pivot_table.columns[1:]  # Skip 'Cylinder Unit'
 )
 
-cylinder_pivot_table = styled_cylinder_pivot_table
+
 
 
         # Get running hours for Main Engine
