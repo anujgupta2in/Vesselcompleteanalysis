@@ -398,7 +398,7 @@ def process_engine_data(data, ref_sheet_path=None, engine_type=None):
             })
 
         return (main_engine_data, aux_engine_data, main_engine_running_hours, aux_running_hours,
-                pivot_table, ref_pivot_table, missing_jobs, cylinder_pivot_table, None, component_status, missing_count)
+                pivot_table, ref_pivot_table, missing_jobs, styled_cylinder_pivot_table, None, component_status, missing_count)
 
     except Exception as e:
         print(f"Error in process_engine_data: {str(e)}")
