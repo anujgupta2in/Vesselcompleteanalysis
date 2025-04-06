@@ -46,6 +46,20 @@ from machinery_analyzer import MachineryAnalyzer
 from report_styler import ReportStyler # Added import for ReportStyler
 
 
+def color_binary_cells(val):
+    try:
+        val = int(val)
+        if val == 0:
+            return 'background-color: #f8d7da; color: #721c24'  # red
+        elif val == 1:
+            return 'background-color: #d4edda; color: #155724'  # green
+        elif val > 5:
+            return 'background-color: #ffeeba; color: #856404'  # orange/yellow
+    except:
+        pass
+    return ''
+
+
 # Configure page settings
 st.set_page_config(page_title="Vessel Report", layout="wide")
 
@@ -205,11 +219,11 @@ if uploaded_file is not None:
         if ref_sheet is None:
             st.warning("No reference sheet uploaded. Some analysis features will be limited.")
             (main_engine_data, aux_engine_data, main_engine_running_hours, aux_running_hours,
-             pivot_table, ref_pivot_table, missing_jobs, styled_cylinder_pivot_table, pivot_table_filteredAE,
+             pivot_table, ref_pivot_table, missing_jobs, cylinder_pivot_table, pivot_table_filteredAE,
              component_status, missing_count) = process_engine_data(data, engine_type=engine_type)
         else:
             (main_engine_data, aux_engine_data, main_engine_running_hours, aux_running_hours,
-             pivot_table, ref_pivot_table, missing_jobs, styled_cylinder_pivot_table, pivot_table_filteredAE,
+             pivot_table, ref_pivot_table, missing_jobs, cylinder_pivot_table, pivot_table_filteredAE,
              component_status, missing_count) = process_engine_data(data, ref_sheet, engine_type)
 
         # Get auxiliary engine data
@@ -235,52 +249,52 @@ if uploaded_file is not None:
             st.metric("AE3", value=aux_running_hours['AE3'] if aux_running_hours['AE3'] != "Not Available" else "N/A",
                       help="Auxiliary Engine 3 Running Hours")
 
-        # # Initialize Export Handler
-        # export_handler = ExportHandler(data, engine_type)
+        # Initialize Export Handler
+        export_handler = ExportHandler(data, engine_type)
 
-        # # Add export buttons
-        # st.subheader("Export Options")
-        # col1, col2, col3 = st.columns(3)
-        # with col1:
-        #     if st.button("Export Full Report"):
-        #         export_link = export_handler.generate_full_report(
-        #             main_engine_data, aux_engine_data, pivot_table, 
-        #             styled_cylinder_pivot_table, component_status, missing_count,
-        #             main_engine_running_hours, aux_running_hours
-        #         )
-        #         st.success(f"Report generated successfully!")
-        #         st.download_button(
-        #             label="Download Full Report",
-        #             data=export_link,
-        #             file_name=f"{vessel_name}_full_report.xlsx",
-        #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        #         )
-        # with col2:
-        #     if st.button("Export Main Engine Report"):
-        #         me_export = export_handler.generate_main_engine_report(
-        #             main_engine_data, pivot_table, 
-        #             styled_cylinder_pivot_table, component_status, missing_count,
-        #             main_engine_running_hours
-        #         )
-        #         st.success(f"Main Engine Report generated successfully!")
-        #         st.download_button(
-        #             label="Download Main Engine Report",
-        #             data=me_export,
-        #             file_name=f"{vessel_name}_main_engine_report.xlsx",
-        #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        #         )
-        # with col3:
-        #     if st.button("Export Auxiliary Engine Report"):
-        #         ae_export = export_handler.generate_auxiliary_engine_report(
-        #             aux_engine_data, aux_running_hours
-        #         )
-        #         st.success(f"Auxiliary Engine Report generated successfully!")
-        #         st.download_button(
-        #             label="Download Auxiliary Engine Report",
-        #             data=ae_export,
-        #             file_name=f"{vessel_name}_auxiliary_engine_report.xlsx",
-        #             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        #         )
+        # Add export buttons
+        st.subheader("Export Options")
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            if st.button("Export Full Report"):
+                export_link = export_handler.generate_full_report(
+                    main_engine_data, aux_engine_data, pivot_table, 
+                    cylinder_pivot_table, component_status, missing_count,
+                    main_engine_running_hours, aux_running_hours
+                )
+                st.success(f"Report generated successfully!")
+                st.download_button(
+                    label="Download Full Report",
+                    data=export_link,
+                    file_name=f"{vessel_name}_full_report.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        with col2:
+            if st.button("Export Main Engine Report"):
+                me_export = export_handler.generate_main_engine_report(
+                    main_engine_data, pivot_table, 
+                    cylinder_pivot_table, component_status, missing_count,
+                    main_engine_running_hours
+                )
+                st.success(f"Main Engine Report generated successfully!")
+                st.download_button(
+                    label="Download Main Engine Report",
+                    data=me_export,
+                    file_name=f"{vessel_name}_main_engine_report.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        with col3:
+            if st.button("Export Auxiliary Engine Report"):
+                ae_export = export_handler.generate_auxiliary_engine_report(
+                    aux_engine_data, aux_running_hours
+                )
+                st.success(f"Auxiliary Engine Report generated successfully!")
+                st.download_button(
+                    label="Download Auxiliary Engine Report",
+                    data=ae_export,
+                    file_name=f"{vessel_name}_auxiliary_engine_report.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
         # Tabs for analysis
         def switch_tab(tab_index):
@@ -433,12 +447,14 @@ if uploaded_file is not None:
             
             # Add Cylinder Unit Analysis
             st.subheader("Main Engine Cylinder Unit Analysis")
-            if styled_cylinder_pivot_table is not None:
-                st.dataframe(styled_cylinder_pivot_table, use_container_width=True)
+            if cylinder_pivot_table is not None:
+                styled_cylinder = cylinder_pivot_table.style.applymap(color_binary_cells)
+                st.dataframe(styled_cylinder, use_container_width=True)
 
             if ref_sheet is not None and ref_pivot_table is not None:
                 st.subheader("Reference Analysis Main Engine")
-                st.dataframe(ref_pivot_table, use_container_width=True)
+                styled_ref_pivot = ref_pivot_table.style.applymap(color_binary_cells)
+                st.dataframe(styled_ref_pivot, use_container_width=True)
                 st.subheader("Missing Jobs for Main Engine")
                 st.dataframe(missing_jobs, use_container_width=True)
             st.subheader("Maintenance Data for Main Engine")
@@ -483,7 +499,8 @@ if uploaded_file is not None:
                 st.subheader("Component Distribution for Auxiliary Engine")
                 component_dist = ae_processor.create_component_distribution(data)
                 if component_dist is not None and not component_dist.empty:
-                    st.dataframe(component_dist, use_container_width=True)
+                        styled_component_distAE = component_dist.style.applymap(color_binary_cells)
+                        st.dataframe(styled_component_distAE, use_container_width=True)
                 else:
                     st.info("No component distribution data available for auxiliary engines.")
             except Exception as e:
@@ -515,7 +532,8 @@ if uploaded_file is not None:
                     
                     if ae_ref_pivot is not None and not ae_ref_pivot.empty:
                         # Use the HTML rendering approach to avoid JavaScript errors
-                        st.write(ae_ref_pivot.to_html(index=False), unsafe_allow_html=True)
+                        styled_ref_ae = ae_ref_pivot.style.applymap(color_binary_cells)
+                        st.dataframe(styled_ref_ae, use_container_width=True)
                         
                         # Provide download option for this reference analysis
                         csv = ae_ref_pivot.to_csv(index=False)
@@ -753,10 +771,23 @@ if uploaded_file is not None:
                                             columns='Machinery Location', 
                                             values='Job Codecopy', 
                                             aggfunc='count'
-                                        )
+                                            ).fillna(0).astype(int)  # Fill NaNs with 0s and convert to int
                                         
-                                        # Display the pivot table
-                                        st.write(pivot_table_resultpurifierJobs.to_html(), unsafe_allow_html=True)
+                                        # Apply color formatting only to numeric part
+                                        # numeric_cols = pivot_table_resultpurifierJobs.select_dtypes(include=[np.number]).columns
+                                        styled_pivotpurifier = pivot_table_resultpurifierJobs.style.applymap(color_binary_cells)
+
+                                        # Display styled dataframe
+                                        st.dataframe(
+                                            styled_pivotpurifier,
+                                            use_container_width=True,
+                                            column_config={
+                                                pivot_table_resultpurifierJobs.index.name or title_col: st.column_config.TextColumn(
+                                                    label=title_col,
+                                                    width="large"
+                                                )
+                                            }
+                                        )
                                         
                                         # Provide download option
                                         csv_pivot = pivot_table_resultpurifierJobs.to_csv()
@@ -1003,9 +1034,25 @@ if uploaded_file is not None:
                     # Display Reference Jobs Pivot Table for Hatch Covers 
                     st.subheader("Reference Jobs for Hatch Covers")
                     if not pivot_table_hatch.empty:
-                        # Use the HTML rendering approach to avoid JavaScript errors
-                        st.write(pivot_table_hatch.to_html(), unsafe_allow_html=True)
-                        
+                        pivot_table_hatch = pivot_table_hatch.fillna(0).astype(int)
+
+                        # Apply conditional formatting
+                        styled_pivothatch = pivot_table_hatch.style.applymap(
+                            color_binary_cells
+                        )
+
+                        # Display styled dataframe with wider first column
+                        st.subheader("Reference Jobs for Hatch Covers")
+                        st.dataframe(
+                            styled_pivothatch,
+                            use_container_width=True,
+                            column_config={
+                                pivot_table_hatch.index.name or pivot_table_hatch.columns[0]: st.column_config.TextColumn(
+                                    label=pivot_table_hatch.index.name or pivot_table_hatch.columns[0],
+                                    width="large"
+                                )
+                            }
+                        )
                         # Provide download option for pivot table
                         csv_pivot = pivot_table_hatch.to_csv()
                         st.download_button(
@@ -1333,9 +1380,11 @@ if uploaded_file is not None:
                         st.error(f"Error displaying Task Count Analysis: {str(e)}")
 
                     st.subheader("Reference Jobs for LSA/FFA (Matching Jobs)")
-                    if not matched_jobs.empty and 'Job Code' not in matched_jobs.columns:
-                        st.write(matched_jobs.to_html(index=False), unsafe_allow_html=True)
+                    if not matched_jobs.empty:
+                        display_cols = ['Machinery', 'UI Job Code', 'J3 Job Title', 'Remarks', 'Applicability']
+                        filtered_matched_jobs = matched_jobs[[col for col in display_cols if col in matched_jobs.columns]]
 
+                        st.write(filtered_matched_jobs.to_html(index=False), unsafe_allow_html=True)
                         csv = matched_jobs.to_csv(index=False)
                         st.download_button(
                             label="Download Matched Jobs CSV",
@@ -1390,8 +1439,11 @@ if uploaded_file is not None:
                         st.error(f"Error displaying Task Count Analysis: {str(e)}")
 
                     st.subheader("Reference Jobs for Fire Fighting System (Matching Jobs)")
-                    if not matched_jobs.empty and 'Job Code' not in matched_jobs.columns:
-                        st.write(matched_jobs.to_html(index=False), unsafe_allow_html=True)
+                    if not matched_jobs.empty:
+                        display_cols = ['Machinery', 'UI Job Code', 'J3 Job Title', 'Remarks', 'Applicability']
+                        filtered_matched_jobs = matched_jobs[[col for col in display_cols if col in matched_jobs.columns]]
+
+                        st.write(filtered_matched_jobs.to_html(index=False), unsafe_allow_html=True)
 
                         csv = matched_jobs.to_csv(index=False)
                         st.download_button(
@@ -1481,10 +1533,21 @@ if uploaded_file is not None:
                     compressor_processor.process_compressor_data(data, dfCompressor)
 
                     st.subheader("Matched Compressor Job Code Summary Table")
-                    if compressor_processor.styled_pivot_table_resultCompressorJobs is not None:
-                        st.markdown(compressor_processor.styled_pivot_table_resultCompressorJobs.to_html(), unsafe_allow_html=True)
+                    if compressor_processor.pivot_table_resultCompressorJobs is not None and not compressor_processor.pivot_table_resultCompressorJobs.empty:
+                        styled_compressor = compressor_processor.pivot_table_resultCompressorJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_compressor,
+                            use_container_width=True,
+                            column_config={
+                                compressor_processor.pivot_table_resultCompressorJobs.index.name or compressor_processor.pivot_table_resultCompressorJobs.columns[0]: st.column_config.TextColumn(
+                                    label=compressor_processor.pivot_table_resultCompressorJobs.index.name or compressor_processor.pivot_table_resultCompressorJobs.columns[0],
+                                    width="large"
+                                )
+                            }
+                        )
                     else:
-                        st.dataframe(compressor_processor.pivot_table_resultCompressorJobs)
+                        st.info("No mapped compressor jobs found to display.")
 
                     st.subheader("Missing Job Codes from Compressor Reference")
                     if not compressor_processor.missingjobsCompressorresult.empty:
@@ -1528,10 +1591,21 @@ if uploaded_file is not None:
                     ladder_processor.process_ladder_data(data, dfLadder)
 
                     st.subheader("Matched Ladder Job Code Summary Table")
-                    if ladder_processor.styled_pivot_table_resultLadderJobs is not None:
-                        st.markdown(ladder_processor.styled_pivot_table_resultLadderJobs.to_html(), unsafe_allow_html=True)
+                    if ladder_processor.pivot_table_resultLadderJobs is not None and not ladder_processor.pivot_table_resultLadderJobs.empty:
+                        styled_ladder = ladder_processor.pivot_table_resultLadderJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_ladder,
+                            use_container_width=True,
+                            column_config={
+                                ladder_processor.pivot_table_resultLadderJobs.index.name or ladder_processor.pivot_table_resultLadderJobs.columns[0]: st.column_config.TextColumn(
+                                    label=ladder_processor.pivot_table_resultLadderJobs.index.name or ladder_processor.pivot_table_resultLadderJobs.columns[0],
+                                    width="large"
+                                )
+                            }
+                        )
                     else:
-                        st.dataframe(ladder_processor.pivot_table_resultLadderJobs)
+                        st.info("No mapped ladder jobs found to display.")
 
                     st.subheader("Missing Job Codes from Ladder Reference")
                     if not ladder_processor.missingjobsLadderresult.empty:
@@ -1576,13 +1650,21 @@ if uploaded_file is not None:
                     boat_processor.process_boat_data(data, dfBoats)
 
                     st.subheader("Matched Boat Job Code Summary Table")
-                    if boat_processor.styled_pivot_table_resultBoatJobs is not None:
-                        st.markdown(
-                            boat_processor.styled_pivot_table_resultBoatJobs.to_html(),
-                            unsafe_allow_html=True
+                    if boat_processor.pivot_table_resultBoatJobs is not None and not boat_processor.pivot_table_resultBoatJobs.empty:
+                        styled_boat = boat_processor.pivot_table_resultBoatJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_boat,
+                            use_container_width=True,
+                            column_config={
+                                boat_processor.pivot_table_resultBoatJobs.index.name or boat_processor.pivot_table_resultBoatJobs.columns[0]: st.column_config.TextColumn(
+                                    label=boat_processor.pivot_table_resultBoatJobs.index.name or boat_processor.pivot_table_resultBoatJobs.columns[0],
+                                    width="large"
+                                )
+                            }
                         )
                     else:
-                        st.dataframe(boat_processor.pivot_table_resultBoatJobs)
+                        st.info("No mapped boat jobs found to display.")
 
                     st.subheader("Missing Job Codes from Boat Reference")
                     if not boat_processor.missingjobsBoatsresult.empty:
@@ -1627,13 +1709,21 @@ if uploaded_file is not None:
                     mooring_processor.process_mooring_data(data, dfMooring)
 
                     st.subheader("Matched Mooring Job Code Summary Table")
-                    if mooring_processor.styled_pivot_table_resultMooringJobs is not None:
-                        st.markdown(
-                            mooring_processor.styled_pivot_table_resultMooringJobs.to_html(),
-                            unsafe_allow_html=True
+                    if mooring_processor.pivot_table_resultMooringJobs is not None and not mooring_processor.pivot_table_resultMooringJobs.empty:
+                        styled_mooring = mooring_processor.pivot_table_resultMooringJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_mooring,
+                            use_container_width=True,
+                            column_config={
+                                mooring_processor.pivot_table_resultMooringJobs.index.name or mooring_processor.pivot_table_resultMooringJobs.columns[0]: st.column_config.TextColumn(
+                                    label=mooring_processor.pivot_table_resultMooringJobs.index.name or mooring_processor.pivot_table_resultMooringJobs.columns[0],
+                                    width="large"
+                                )
+                            }
                         )
                     else:
-                        st.dataframe(mooring_processor.pivot_table_resultMooringJobs)
+                        st.info("No mapped mooring jobs found to display.")
 
                     st.subheader("Missing Job Codes from Mooring Reference")
                     if not mooring_processor.missingjobsMooringresult.empty:
@@ -1679,13 +1769,21 @@ if uploaded_file is not None:
                     steering_processor.process_steering_data(data, dfSteering)
 
                     st.subheader("Matched Steering Job Code Summary Table")
-                    if steering_processor.styled_pivot_table_resultSteeringJobs is not None:
-                        st.markdown(
-                            steering_processor.styled_pivot_table_resultSteeringJobs.to_html(),
-                            unsafe_allow_html=True
+                    if steering_processor.pivot_table_resultSteeringJobs is not None and not steering_processor.pivot_table_resultSteeringJobs.empty:
+                        styled_steering = steering_processor.pivot_table_resultSteeringJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_steering,
+                            use_container_width=True,
+                            column_config={
+                                steering_processor.pivot_table_resultSteeringJobs.index.name or steering_processor.pivot_table_resultSteeringJobs.columns[0]: st.column_config.TextColumn(
+                                    label=steering_processor.pivot_table_resultSteeringJobs.index.name or steering_processor.pivot_table_resultSteeringJobs.columns[0],
+                                    width="large"
+                                )
+                            }
                         )
                     else:
-                        st.dataframe(steering_processor.pivot_table_resultSteeringJobs)
+                        st.info("No mapped steering jobs found to display.")
 
                     st.subheader("Missing Job Codes from Steering Reference")
                     if not steering_processor.missingjobsSteeringresult.empty:
@@ -1729,13 +1827,21 @@ if uploaded_file is not None:
                     incin_processor.process_incin_data(data, dfIncin)
 
                     st.subheader("Matched Incinerator Job Code Summary Table")
-                    if incin_processor.styled_pivot_table_resultIncinJobs is not None:
-                        st.markdown(
-                            incin_processor.styled_pivot_table_resultIncinJobs.to_html(),
-                            unsafe_allow_html=True
+                    if incin_processor.pivot_table_resultIncinJobs is not None and not incin_processor.pivot_table_resultIncinJobs.empty:
+                        styled_incin = incin_processor.pivot_table_resultIncinJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_incin,
+                            use_container_width=True,
+                            column_config={
+                                incin_processor.pivot_table_resultIncinJobs.index.name or incin_processor.pivot_table_resultIncinJobs.columns[0]: st.column_config.TextColumn(
+                                    label=incin_processor.pivot_table_resultIncinJobs.index.name or incin_processor.pivot_table_resultIncinJobs.columns[0],
+                                    width="large"
+                                )
+                            }
                         )
                     else:
-                        st.dataframe(incin_processor.pivot_table_resultIncinJobs)
+                        st.info("No mapped incinerator jobs found to display.")
 
                     st.subheader("Missing Job Codes from Incinerator Reference")
                     if not incin_processor.missingjobsIncinresult.empty:
@@ -1779,13 +1885,22 @@ if uploaded_file is not None:
                     stp_processor.process_stp_data(data, dfSTP)
 
                     st.subheader("Matched STP Job Code Summary Table")
-                    if stp_processor.styled_pivot_table_resultSTPJobs is not None:
-                        st.markdown(
-                            stp_processor.styled_pivot_table_resultSTPJobs.to_html(),
-                            unsafe_allow_html=True
+
+                    if stp_processor.pivot_table_resultSTPJobs is not None and not stp_processor.pivot_table_resultSTPJobs.empty:
+                        styled_stp = stp_processor.pivot_table_resultSTPJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_stp,
+                            use_container_width=True,
+                            column_config={
+                                stp_processor.pivot_table_resultSTPJobs.index.name or stp_processor.pivot_table_resultSTPJobs.columns[0]: st.column_config.TextColumn(
+                                    label=stp_processor.pivot_table_resultSTPJobs.index.name or stp_processor.pivot_table_resultSTPJobs.columns[0],
+                                    width="large"
+                                )
+                            }
                         )
                     else:
-                        st.dataframe(stp_processor.pivot_table_resultSTPJobs)
+                        st.info("No mapped STP jobs found to display.")
 
                     st.subheader("Missing Job Codes from STP Reference")
                     if not stp_processor.missingjobsSTPresult.empty:
@@ -1831,13 +1946,21 @@ if uploaded_file is not None:
                     ows_processor.process_ows_data(data, dfOWS)
 
                     st.subheader("Matched OWS Job Code Summary Table")
-                    if ows_processor.styled_pivot_table_resultOWSJobs is not None:
-                        st.markdown(
-                            ows_processor.styled_pivot_table_resultOWSJobs.to_html(),
-                            unsafe_allow_html=True
+                    if ows_processor.pivot_table_resultOWSJobs is not None and not ows_processor.pivot_table_resultOWSJobs.empty:
+                        styled_ows = ows_processor.pivot_table_resultOWSJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_ows,
+                            use_container_width=True,
+                            column_config={
+                                ows_processor.pivot_table_resultOWSJobs.index.name or ows_processor.pivot_table_resultOWSJobs.columns[0]: st.column_config.TextColumn(
+                                    label=ows_processor.pivot_table_resultOWSJobs.index.name or ows_processor.pivot_table_resultOWSJobs.columns[0],
+                                    width="large"
+                                )
+                            }
                         )
                     else:
-                        st.dataframe(ows_processor.pivot_table_resultOWSJobs)
+                        st.info("No mapped OWS jobs found to display.")
 
                     st.subheader("Missing Job Codes from OWS Reference")
                     if not ows_processor.missingjobsOWSresult.empty:
@@ -1881,13 +2004,22 @@ if uploaded_file is not None:
                     powerdist_processor.process_powerdist_data(data, dfpowerdist)
 
                     st.subheader("Matched Power Distribution Job Code Summary Table")
-                    if powerdist_processor.styled_pivot_table_resultpowerdistJobs is not None:
-                        st.markdown(
-                            powerdist_processor.styled_pivot_table_resultpowerdistJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = powerdist_processor.pivot_table_resultpowerdistJobs  # ✅ Correct casing
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_powerdist = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df.index.name or (pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1")
+
+                        st.dataframe(
+                            styled_powerdist,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(powerdist_processor.pivot_table_resultpowerdistJobs)
+                        st.info("No mapped Power Distribution jobs found to display.")
 
                     st.subheader("Missing Job Codes from Power Distribution Reference")
                     if not powerdist_processor.missingjobspowerdistresult.empty:
@@ -1931,13 +2063,22 @@ if uploaded_file is not None:
                     crane_processor.process_crane_data(data, dfcrane)
 
                     st.subheader("Matched Crane Job Code Summary Table")
-                    if crane_processor.styled_pivot_table_resultcraneJobs is not None:
-                        st.markdown(
-                            crane_processor.styled_pivot_table_resultcraneJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = crane_processor.pivot_table_resultcraneJobs
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_crane = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df.index.name or (pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1")
+
+                        st.dataframe(
+                            styled_crane,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(crane_processor.pivot_table_resultcraneJobs)
+                        st.info("No mapped crane jobs found to display.")
 
                     st.subheader("Missing Job Codes from Crane Reference")
                     if not crane_processor.missingjobscraneresult.empty:
@@ -1983,13 +2124,22 @@ if uploaded_file is not None:
                     emg_processor.process_emg_data(data, dfEmg)
 
                     st.subheader("Matched Emergency Generator Job Code Summary Table")
-                    if emg_processor.styled_pivot_table_resultEmgJobs is not None:
-                        st.markdown(
-                            emg_processor.styled_pivot_table_resultEmgJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = emg_processor.pivot_table_resultEmgJobs  # ✅ Correct attribute name
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_emg = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df.index.name or (pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1")
+
+                        st.dataframe(
+                            styled_emg,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(emg_processor.pivot_table_resultEmgJobs)
+                        st.info("No mapped emergency generator jobs found to display.")
 
                     st.subheader("Missing Job Codes from Emergency Generator Reference")
                     if not emg_processor.missingjobsEmgresult.empty:
@@ -2034,13 +2184,22 @@ if uploaded_file is not None:
                     bridge_processor.process_bridge_data(data, dfbridge)
 
                     st.subheader("Matched Bridge Job Code Summary Table")
-                    if bridge_processor.styled_pivot_table_resultbridgeJobs is not None:
-                        st.markdown(
-                            bridge_processor.styled_pivot_table_resultbridgeJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = bridge_processor.pivot_table_resultbridgeJobs  # ✅ correct attribute name
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_bridge = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df.index.name or (pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1")
+
+                        st.dataframe(
+                            styled_bridge,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(bridge_processor.pivot_table_resultbridgeJobs)
+                        st.info("No mapped bridge jobs found to display.")
 
                     st.subheader("Missing Job Codes from Bridge Reference")
                     if not bridge_processor.missingjobsbridgeresult.empty:
@@ -2085,13 +2244,22 @@ if uploaded_file is not None:
                     refac_processor.process_refac_data(data, dfrefac)
 
                     st.subheader("Matched Reefer & AC Job Code Summary Table")
-                    if refac_processor.styled_pivot_table_resultrefacJobs is not None:
-                        st.markdown(
-                            refac_processor.styled_pivot_table_resultrefacJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = refac_processor.pivot_table_resultrefacJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_refac = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df.index.name or (pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1")
+
+                        st.dataframe(
+                            styled_refac,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(refac_processor.pivot_table_resultrefacJobs)
+                        st.info("No mapped Reefer & AC jobs found to display.")
 
                     st.subheader("Missing Job Codes from Reefer & AC Reference")
                     if not refac_processor.missingjobsrefacresult.empty:
@@ -2135,13 +2303,26 @@ if uploaded_file is not None:
                     fan_processor.process_fan_data(data, dffan)
 
                     st.subheader("Matched Fan Job Code Summary Table (By Title)")
-                    if fan_processor.styled_pivot_table_resultfanJobs is not None:
-                        st.markdown(
-                            fan_processor.styled_pivot_table_resultfanJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = fan_processor.pivot_table_resultfanJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_fan = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_fan,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(fan_processor.pivot_table_resultfanJobs)
+                        st.info("No matched fan jobs found to display.")
 
                     st.subheader("Total Fan Jobs by Machinery and Sub Component")
                     if fan_processor.styled_pivot_table_fan is not None:
@@ -2196,13 +2377,26 @@ if uploaded_file is not None:
                     tank_processor.process_tank_data(data, dftanks)
 
                     st.subheader("Matched Tank Job Code Summary Table")
-                    if tank_processor.styled_pivot_table_resulttanksJobs is not None:
-                        st.markdown(
-                            tank_processor.styled_pivot_table_resulttanksJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = tank_processor.pivot_table_resulttanksJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_tanks = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_tanks,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(tank_processor.pivot_table_resulttanksJobs)
+                        st.info("No mapped tank jobs found to display.")
 
                     st.subheader("Missing Job Codes from Tank Reference")
                     if not tank_processor.missingjobstankresult.empty:
@@ -2248,13 +2442,26 @@ if uploaded_file is not None:
                     fwg_processor.process_fwg_data(data, dffwg)
 
                     st.subheader("Matched FWG & Hydrophore Job Code Summary Table")
-                    if fwg_processor.styled_pivot_table_resultfwgJobs is not None:
-                        st.markdown(
-                            fwg_processor.styled_pivot_table_resultfwgJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = fwg_processor.pivot_table_resultfwgJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_fwg = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_fwg,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(fwg_processor.pivot_table_resultfwgJobs)
+                        st.info("No mapped FWG or Hydrophore jobs found to display.")
 
                     st.subheader("Missing Job Codes from FWG Reference")
                     if not fwg_processor.missingjobsfwgresult.empty:
@@ -2299,13 +2506,26 @@ if uploaded_file is not None:
                     workshop_processor.process_workshop_data(data, dfworkshop)
 
                     st.subheader("Matched Workshop Job Code Summary Table")
-                    if workshop_processor.styled_pivot_table_resultworkshopJobs is not None:
-                        st.markdown(
-                            workshop_processor.styled_pivot_table_resultworkshopJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = workshop_processor.pivot_table_resultworkshopJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_workshop = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_workshop,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(workshop_processor.pivot_table_resultworkshopJobs)
+                        st.info("No mapped workshop jobs found to display.")
 
                     st.subheader("Missing Job Codes from Workshop Reference")
                     if not workshop_processor.missingjobsworkshopresult.empty:
@@ -2350,13 +2570,26 @@ if uploaded_file is not None:
                     boiler_processor.process_boiler_data(data, dfboiler)
 
                     st.subheader("Matched Boiler Job Code Summary Table")
-                    if boiler_processor.styled_pivot_table_resultboilerJobs is not None:
-                        st.markdown(
-                            boiler_processor.styled_pivot_table_resultboilerJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = boiler_processor.pivot_table_resultboilerJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_boiler = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_boiler,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(boiler_processor.pivot_table_resultboilerJobs)
+                        st.info("No mapped boiler jobs found to display.")
 
                     st.subheader("Missing Job Codes from Boiler Reference")
                     if not boiler_processor.missingjobsboilerresult.empty:
@@ -2403,13 +2636,27 @@ if uploaded_file is not None:
 
                     # Matched Job Code Summary
                     st.subheader("Matched Misc Job Code Summary by Function")
-                    if misc_processor.styled_pivot_table_resultmiscJobs is not None:
-                        st.markdown(
-                            misc_processor.styled_pivot_table_resultmiscJobs.to_html(),
-                            unsafe_allow_html=True
+
+                    pivot_df = misc_processor.pivot_table_resultmiscJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_misc = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_misc,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(misc_processor.pivot_table_resultmiscJobs)
+                        st.info("No mapped miscellaneous jobs found to display.")
 
                     # Total Count Table
                     st.subheader("Total Misc Jobs by Title")
@@ -2475,13 +2722,26 @@ if uploaded_file is not None:
                     battery_processor.process_battery_data(data, dfbattery)
 
                     st.subheader("Matched Battery Job Code Summary Table")
-                    if battery_processor.styled_pivot_table_resultbatteryJobs is not None:
-                        st.markdown(
-                            battery_processor.styled_pivot_table_resultbatteryJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = battery_processor.pivot_table_resultbatteryJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_battery = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_battery,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(battery_processor.pivot_table_resultbatteryJobs)
+                        st.info("No mapped battery jobs found to display.")
 
                     st.subheader("Missing Job Codes from Battery Reference")
                     if not battery_processor.missingjobsbatteryresult.empty:
@@ -2526,13 +2786,21 @@ if uploaded_file is not None:
                     bt_processor.process_bt_data(data, dfBT)
 
                     st.subheader("Matched BT Job Code Summary Table")
-                    if bt_processor.styled_pivot_table_resultBTJobs is not None:
-                        st.markdown(
-                            bt_processor.styled_pivot_table_resultBTJobs.to_html(),
-                            unsafe_allow_html=True
+                    if bt_processor.pivot_table_resultBTJobs is not None and not bt_processor.pivot_table_resultBTJobs.empty:
+                        styled_bt = bt_processor.pivot_table_resultBTJobs.style.applymap(color_binary_cells)
+
+                        st.dataframe(
+                            styled_bt,
+                            use_container_width=True,
+                            column_config={
+                                bt_processor.pivot_table_resultBTJobs.index.name or bt_processor.pivot_table_resultBTJobs.columns[0]: st.column_config.TextColumn(
+                                    label=bt_processor.pivot_table_resultBTJobs.index.name or bt_processor.pivot_table_resultBTJobs.columns[0],
+                                    width="large"
+                                )
+                            }
                         )
                     else:
-                        st.dataframe(bt_processor.pivot_table_resultBTJobs)
+                        st.info("No mapped Bow Thruster jobs found to display.")
 
                     st.subheader("Missing Job Codes from BT Reference")
                     if not bt_processor.missingjobsBTresult.empty:
@@ -2577,13 +2845,27 @@ if uploaded_file is not None:
                     lpscr_processor.process_lpscr_data(data, dfLPSCR)
 
                     st.subheader("Matched LPSCR Job Code Summary Table")
-                    if lpscr_processor.styled_pivot_table_resultLPSCRJobs is not None:
-                        st.markdown(
-                            lpscr_processor.styled_pivot_table_resultLPSCRJobs.to_html(),
-                            unsafe_allow_html=True
+
+                    pivot_df = lpscr_processor.pivot_table_resultLPSCRJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_lpscr = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_lpscr,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(lpscr_processor.pivot_table_resultLPSCRJobs)
+                        st.info("No mapped LP SCR jobs found to display.")
 
                     st.subheader("Missing Job Codes from LPSCR Reference")
                     if not lpscr_processor.missingjobsLPSCRresult.empty:
@@ -2627,13 +2909,26 @@ if uploaded_file is not None:
                     hpscr_processor.process_hpscr_data(data, dfHPSCR)
 
                     st.subheader("Matched HPSCR Job Code Summary Table")
-                    if hpscr_processor.styled_pivot_table_resultHPSCRJobs is not None:
-                        st.markdown(
-                            hpscr_processor.styled_pivot_table_resultHPSCRJobs.to_html(),
-                            unsafe_allow_html=True
+                    pivot_df = hpscr_processor.pivot_table_resultHPSCRJobs  # ✅ correct attribute
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_hpscr = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_hpscr,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
                     else:
-                        st.dataframe(hpscr_processor.pivot_table_resultHPSCRJobs)
+                        st.info("No mapped HP SCR jobs found to display.")
 
                     st.subheader("Missing Job Codes from HPSCR Reference")
                     if not hpscr_processor.missingjobsHPSCRresult.empty:
@@ -2678,19 +2973,50 @@ if uploaded_file is not None:
                     lsa_processor.process_lsa_data(data, dflsa)
 
                     st.subheader("LSA Mapping Summary by Function")
-                    st.data_editor(
-                        lsa_processor.pivot_table_resultlsaJobs,
-                        use_container_width=True,
-                        disabled=True
-                    )
+
+                    pivot_df = lsa_processor.pivot_table_resultlsaJobs
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_lsa = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_lsa,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
+                        )
+                    else:
+                        st.info("No mapped LSA job summary found.")
 
                     st.subheader("Total Mapped LSA Jobs by Title")
-                    st.data_editor(
-                        lsa_processor.pivot_table_resultlsaJobstotal,
-                        use_container_width=True,
-                        disabled=True
-                    )
 
+                    pivot_df = lsa_processor.pivot_table_resultlsaJobstotal
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_total_lsa = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name
+                            if pivot_df.index.name
+                            else pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+                        )
+
+                        st.dataframe(
+                            styled_total_lsa,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
+                        )
+                    else:
+                        st.info("No total mapped LSA job data found.")
                     st.subheader("Missing Job Codes from LSA Reference")
                     if not lsa_processor.missinglsajobsresult.empty:
                         st.dataframe(lsa_processor.missinglsajobsresult, use_container_width=True)
@@ -2731,18 +3057,44 @@ if uploaded_file is not None:
                     ffa_processor.process_ffa_data(data, dfffa)
 
                     st.subheader("FFA Mapping Summary by Function")
-                    if not ffa_processor.pivot_table_resultffaJobs.empty:
-                        styled_table = ffa_processor.pivot_table_resultffaJobs.style.set_table_styles(
-                            [{'selector': 'th.col0, td.col0', 'props': [('min-width', '250px'), ('text-align', 'left')]}]
+                    pivot_df = ffa_processor.pivot_table_resultffaJobs
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_ffa = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df.index.name or pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
                         )
-                        st.markdown(styled_table.to_html(), unsafe_allow_html=True)
+
+                        st.dataframe(
+                            styled_ffa,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
+                        )
+                    else:
+                        st.info("No FFA function mapping summary data available.")
 
                     st.subheader("Total Mapped FFA Jobs by Title")
-                    if not ffa_processor.pivot_table_resultffaJobstotal.empty:
-                        styled_total = ffa_processor.pivot_table_resultffaJobstotal.style.set_table_styles(
-                            [{'selector': 'th.col0, td.col0', 'props': [('min-width', '250px'), ('text-align', 'left')]}]
+                    pivot_df_total = ffa_processor.pivot_table_resultffaJobstotal
+
+                    if pivot_df_total is not None and not pivot_df_total.empty:
+                        styled_total_ffa = pivot_df_total.style.applymap(color_binary_cells)
+
+                        first_col = (
+                            pivot_df_total.index.name or pivot_df_total.columns[0] if len(pivot_df_total.columns) > 0 else "Column 1"
                         )
-                        st.markdown(styled_total.to_html(), unsafe_allow_html=True)
+
+                        st.dataframe(
+                            styled_total_ffa,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
+                        )
+                    else:
+                        st.info("No total mapped FFA job data available.")
 
                     st.subheader("Missing Job Codes from FFA Reference")
                     if not ffa_processor.missingffajobsresult.empty:
@@ -2770,18 +3122,40 @@ if uploaded_file is not None:
                     inactive_processor.process_inactive_data(data, dfinactive)
 
                     st.subheader("Inactive Mapping Summary by Function")
-                    if not inactive_processor.pivot_table_resultinactiveJobs.empty:
-                        styled_table = inactive_processor.pivot_table_resultinactiveJobs.style.set_table_styles(
-                            [{'selector': 'th.col0, td.col0', 'props': [('min-width', '250px'), ('text-align', 'left')]}]
+                    pivot_df = inactive_processor.pivot_table_resultinactiveJobs
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_inactive = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df.index.name or pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+
+                        st.dataframe(
+                            styled_inactive,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
-                        st.markdown(styled_table.to_html(), unsafe_allow_html=True)
+                    else:
+                        st.info("No inactive function mapping summary data available.")
 
                     st.subheader("Total Mapped Inactive Jobs by Title")
-                    if not inactive_processor.pivot_table_resultinactiveJobstotal.empty:
-                        styled_total_table = inactive_processor.pivot_table_resultinactiveJobstotal.style.set_table_styles(
-                            [{'selector': 'th.col0, td.col0', 'props': [('min-width', '250px'), ('text-align', 'left')]}]
+                    pivot_df_total = inactive_processor.pivot_table_resultinactiveJobstotal
+
+                    if pivot_df_total is not None and not pivot_df_total.empty:
+                        styled_total_inactive = pivot_df_total.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df_total.index.name or pivot_df_total.columns[0] if len(pivot_df_total.columns) > 0 else "Column 1"
+
+                        st.dataframe(
+                            styled_total_inactive,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
-                        st.markdown(styled_total_table.to_html(), unsafe_allow_html=True)
+                    else:
+                        st.info("No total mapped inactive job data available.")
 
                     st.subheader("Missing Job Codes from Inactive Reference")
                     if not inactive_processor.missinginactivejobsresult.empty:
@@ -2808,18 +3182,40 @@ if uploaded_file is not None:
                     critical_processor.process_critical_data(data, dfcritical)
 
                     st.subheader("Critical Mapping Summary by Function")
-                    if not critical_processor.pivot_table_resultcriticalJobs.empty:
-                        styled_table = critical_processor.pivot_table_resultcriticalJobs.style.set_table_styles(
-                            [{'selector': 'th.col0, td.col0', 'props': [('min-width', '250px'), ('text-align', 'left')]}]
+                    pivot_df = critical_processor.pivot_table_resultcriticalJobs
+
+                    if pivot_df is not None and not pivot_df.empty:
+                        styled_critical = pivot_df.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df.index.name or pivot_df.columns[0] if len(pivot_df.columns) > 0 else "Column 1"
+
+                        st.dataframe(
+                            styled_critical,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
-                        st.markdown(styled_table.to_html(), unsafe_allow_html=True)
+                    else:
+                        st.info("No critical mapping summary data available.")
 
                     st.subheader("Total Mapped Critical Jobs by Title")
-                    if not critical_processor.pivot_table_resultcriticalJobstotal.empty:
-                        styled_total_table = critical_processor.pivot_table_resultcriticalJobstotal.style.set_table_styles(
-                            [{'selector': 'th.col0, td.col0', 'props': [('min-width', '250px'), ('text-align', 'left')]}]
+                    pivot_df_total = critical_processor.pivot_table_resultcriticalJobstotal
+
+                    if pivot_df_total is not None and not pivot_df_total.empty:
+                        styled_critical_total = pivot_df_total.style.applymap(color_binary_cells)
+
+                        first_col = pivot_df_total.index.name or pivot_df_total.columns[0] if len(pivot_df_total.columns) > 0 else "Column 1"
+
+                        st.dataframe(
+                            styled_critical_total,
+                            use_container_width=True,
+                            column_config={
+                                first_col: st.column_config.TextColumn(label=first_col, width="large")
+                            }
                         )
-                        st.markdown(styled_total_table.to_html(), unsafe_allow_html=True)
+                    else:
+                        st.info("No total mapped critical job data available.")
 
                     st.subheader("Missing Job Codes from Critical Reference")
                     if not critical_processor.missingcriticaljobsresult.empty:
