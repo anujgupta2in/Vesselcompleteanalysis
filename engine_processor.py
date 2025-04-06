@@ -279,7 +279,7 @@ def process_engine_data(data, ref_sheet_path=None, engine_type=None):
         main_engine_filtered.loc[:, 'Cylinder Unit'] = main_engine_filtered['Sub Component Location'].str.extract(r'(Cylinder Unit#\d+)')
         main_engine_filtered.loc[:, 'Sub Components'] = main_engine_filtered['Sub Component Location'].str.extract(r'Cylinder Unit#\d+ > (.*)')
 
-            # Create cylinder unit pivot table
+        # Create cylinder unit pivot table
         cylinder_pivot_table = main_engine_filtered.pivot_table(
             index='Cylinder Unit',
             columns='Sub Components',
@@ -288,28 +288,6 @@ def process_engine_data(data, ref_sheet_path=None, engine_type=None):
             fill_value=0
         ).reset_index()
         cylinder_pivot_table.columns.name = None
-
-
-                # Apply color coding using pandas Styler
-        def highlight_cylinder_cells(val):
-            try:
-                if val == 1:
-                    return 'background-color: green; color: white'
-                elif val == 0:
-                    return 'background-color: red; color: white'
-            except:
-                pass
-            return ''
-        
-        styled_cylinder_pivot_table = cylinder_pivot_table.style.applymap(
-            highlight_cylinder_cells,
-            subset=cylinder_pivot_table.columns[1:]  # Skip 'Cylinder Unit'
-        )
-
-
-
-
-
 
         # Get running hours for Main Engine
         main_engine_rows = data[data['Machinery Location'].str.contains('Main Engine', case=False, na=False)]
@@ -398,7 +376,7 @@ def process_engine_data(data, ref_sheet_path=None, engine_type=None):
             })
 
         return (main_engine_data, aux_engine_data, main_engine_running_hours, aux_running_hours,
-                pivot_table, ref_pivot_table, missing_jobs, styled_cylinder_pivot_table, None, component_status, missing_count)
+                pivot_table, ref_pivot_table, missing_jobs, cylinder_pivot_table, None, component_status, missing_count)
 
     except Exception as e:
         print(f"Error in process_engine_data: {str(e)}")
