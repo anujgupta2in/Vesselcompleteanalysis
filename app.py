@@ -163,6 +163,7 @@ if uploaded_file is not None:
             "BWTS ERMA": "BWTSERMA",
             "BWTS Sunrai": "BWTSSunrai",
             "BWTS Techcross": "BWTStechcross",
+            "BWTS Headway Oceanguard": "BWTSHMT",
             "Other BWTS": "BWTS"
         }
         
