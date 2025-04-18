@@ -43,8 +43,57 @@ from inactive_processor import InactiveMappingProcessor
 from criticaljobs_processor import CriticalJobsProcessor
 from export_handler import ExportHandler
 from machinery_analyzer import MachineryAnalyzer
-from report_styler import ReportStyler # Added import for ReportStyler
+from report_styler import ReportStyler
+from quickview import QuickViewAnalyzer, create_and_style_pivot_table
+ # Added import for ReportStyler
 
+
+#
+
+
+# === Processor Initializations ===
+
+workshop_processor = WorkshopSystemProcessor()
+fwg_processor = FWGSystemProcessor()
+ae_processor = AuxiliaryEngineProcessor()
+bwts_processor = BWTSProcessor()
+compressor_processor = CompressorSystemProcessor()
+ladder_processor = LadderSystemProcessor()
+boat_processor = BoatSystemProcessor()
+mooring_processor = MooringSystemProcessor()
+hatch_processor = HatchProcessor()
+steering_processor = SteeringSystemProcessor()
+boiler_processor = BoilerSystemProcessor()
+incin_processor = IncineratorSystemProcessor()
+stp_processor = STPSystemProcessor()
+ows_processor = OWSSystemProcessor()
+powerdist_processor = PowerDistSystemProcessor()
+crane_processor = CraneSystemProcessor()
+emg_processor = EmergencyGenSystemProcessor()
+bridge_processor = BridgeSystemProcessor()
+refac_processor = RefacSystemProcessor()
+lsamapping_processor = LSAMappingProcessor()
+ffamapping_processor = FFAMappingProcessor()
+tank_processor = TankSystemProcessor()
+battery_processor = BatterySystemProcessor()
+bt_processor = BTSystemProcessor()
+cargohandling_processor = CargoHandlingSystemProcessor()
+cargopumping_processor = CargoPumpingProcessor()
+cargoventing_processor = CargoVentingSystemProcessor()
+critical_processor = CriticalJobsProcessor()
+emg_processor = EmergencyGenSystemProcessor()
+hpscr_processor = HPSCRSystemProcessor()
+inactive_processor = InactiveMappingProcessor()
+inertgas_processor = InertGasSystemProcessor()
+lpscr_processor = LPSCRSystemProcessor()
+misc_processor = MiscSystemProcessor()
+mooring_processor = MooringSystemProcessor()
+powerdist_processor = PowerDistSystemProcessor()
+purifier_processor = PurifierProcessor()
+steering_processor = SteeringSystemProcessor()
+stp_processor = STPSystemProcessor()
+tank_processor = TankSystemProcessor()
+workshop_processor = WorkshopSystemProcessor()
 
 def color_binary_cells(val):
     try:
@@ -163,7 +212,6 @@ if uploaded_file is not None:
             "BWTS ERMA": "BWTSERMA",
             "BWTS Sunrai": "BWTSSunrai",
             "BWTS Techcross": "BWTStechcross",
-            "BWTS Headway Oceanguard": "BWTSHMT",
             "Other BWTS": "BWTS"
         }
         
@@ -441,7 +489,17 @@ if uploaded_file is not None:
 
         with tab_row_4[7]:
             if st.button("Critical Mapping", key="critical_tab"):
-                switch_tab(39) 
+                switch_tab(39)
+
+
+
+            # Fifth row of tabs (QuickView only)
+        tab_row_5 = st.columns(1)
+
+        with tab_row_5[0]:
+            if st.button("QuickView Summary", key="quickview_tab"):
+                switch_tab(40)
+
  
         if st.session_state.current_tab == 0:
             st.header("Main Engine Analysis")
@@ -3229,9 +3287,140 @@ if uploaded_file is not None:
             else:
                 st.warning("Reference sheet is required for Critical Mapping analysis.")
 
+        elif st.session_state.current_tab == 40:
+            st.header("QuickView Summary")
 
+            if ref_sheet is not None:
+                try:
+                    # Load reference sheets
+                    ref_sheets = pd.read_excel(ref_sheet, sheet_name=None)
+                    dfML = ref_sheets.get('Machinery Location', pd.DataFrame())
+                    dfCM = ref_sheets.get('Critical Machinery', pd.DataFrame())
+                    dfVSM = ref_sheets.get('Vessel Specific Machinery', pd.DataFrame())
 
+                    analyzer = QuickViewAnalyzer(data, dfML, dfCM, dfVSM)
 
+                    ae_ref_pivot, ae_missing_jobs = ae_processor.process_reference_data(data, ref_sheet)
+                    battery_processor.process_battery_data(data, ref_sheets.get("Battery", pd.DataFrame()))
+                    boat_processor.process_boat_data(data, ref_sheets.get("Boats", pd.DataFrame()))
+                    boiler_processor.process_boiler_data(data, ref_sheets.get("Boiler", pd.DataFrame()))
+                    bridge_processor.process_bridge_data(data, ref_sheets.get("Bridge", pd.DataFrame()))
+                    bt_processor.process_bt_data(data, ref_sheets.get("Bow Thruster", pd.DataFrame()))
+                    bwts_missing_jobs = bwts_processor.process_reference_data(data, ref_sheet)
+
+                    chs_processor = CargoHandlingSystemProcessor()
+                    dfCargoHandling = pd.read_excel(ref_sheet, sheet_name="Cargohanding")
+                    chs_processor.process_reference_data(data, ref_sheet)
+
+                    cargopumping_processor.process_reference_data(data, ref_sheet)
+                    cargoventing_processor.process_reference_data(data, ref_sheet)
+                    compressor_processor.process_compressor_data(data, ref_sheets.get("Compressor", pd.DataFrame()))
+                    crane_processor.process_crane_data(data, ref_sheets.get("Crane", pd.DataFrame()))
+                    critical_processor.process_critical_data(data, ref_sheets.get("criticalmapping", pd.DataFrame()))
+                    main_engine_data, *_ , missing_jobs, _ = process_engine_data(data, ref_sheet, engine_type)
+                    ffamapping_processor.process_ffa_data(data, pd.read_excel(ref_sheet, sheet_name="ffamapping"))
+                    fwg_processor.process_fwg_data(data, pd.read_excel(ref_sheet, sheet_name="FWG"))
+                    missing_jobs_hatch = hatch_processor.process_reference_data(data, ref_sheet)
+                    hpscr_processor.process_hpscr_data(data, pd.read_excel(ref_sheet, sheet_name="HPSCRHITACHI"))
+                    inactive_processor.process_inactive_data(data, pd.read_excel(ref_sheet, sheet_name="inactivemapping"))
+                    inertgas_processor.process_reference_data(data, ref_sheet)
+                    ladder_processor.process_ladder_data(data, pd.read_excel(ref_sheet, sheet_name="Ladders"))
+                    incin_processor.process_incin_data(data, pd.read_excel(ref_sheet, sheet_name="Incin"))
+                    lpscr_processor.process_lpscr_data(data, pd.read_excel(ref_sheet, sheet_name="LPSCRYANMAR"))
+                    lsamapping_processor.process_lsa_data(data, pd.read_excel(ref_sheet, sheet_name="lsamapping"))
+                    misc_processor.process_misc_data(data, pd.read_excel(ref_sheet, sheet_name="Misc"))
+                    mooring_processor.process_mooring_data(data, pd.read_excel(ref_sheet, sheet_name="Mooring"))
+                    ows_processor.process_ows_data(data, pd.read_excel(ref_sheet, sheet_name="OWS"))
+                    powerdist_processor.process_powerdist_data(data, pd.read_excel(ref_sheet, sheet_name="Powerdist"))
+                    missingjobspurifierresult = purifier_processor.process_reference_data(data, ref_sheet)
+                    refac_processor.process_refac_data(data, pd.read_excel(ref_sheet, sheet_name="Refac"))
+                    steering_processor.process_steering_data(data, pd.read_excel(ref_sheet, sheet_name="Steering"))
+                    stp_processor.process_stp_data(data, pd.read_excel(ref_sheet, sheet_name="STP"))
+                    tank_processor.process_tank_data(data, pd.read_excel(ref_sheet, sheet_name="Tanks"))
+                    workshop_processor.process_workshop_data(data, pd.read_excel(ref_sheet, sheet_name="Workshop"))
+
+                    # Collect job count summaries
+                    vesselname, totaljobs, criticaljobscount, total_missing_jobs, missing_jobs_df, missing_machinery_count = analyzer.get_basic_counts(
+                        ae_missing_jobs=ae_missing_jobs,
+                        battery_missing_jobs=battery_processor.missingjobsbatteryresult,
+                        boat_missing_jobs=boat_processor.missingjobsBoatsresult,
+                        boiler_missing_jobs=boiler_processor.missingjobsboilerresult,
+                        bridge_missing_jobs=bridge_processor.missingjobsbridgeresult,
+                        bt_missing_jobs=bt_processor.missingjobsBTresult,
+                        bwts_missing_jobs=bwts_missing_jobs,
+                        Cargo_Handling_System=chs_processor.missing_jobs_cargohandling.copy(),
+                        Cargo_Pumping_System=cargopumping_processor.missingjobscargopumpingresult.copy(),
+                        Cargo_Venting_System=cargoventing_processor.missing_jobs_cargovent.copy(),
+                        compressor_missing_jobs=compressor_processor.missingjobsCompressorresult,
+                        crane_missing_jobs=crane_processor.missingjobscraneresult,
+                        Critical_Jobs=critical_processor.missingcriticaljobsresult.copy(),
+                        Main_Engine=missing_jobs.copy(),
+                        FFA_Mapping=ffamapping_processor.missingffajobsresult.copy(),
+                        FWG_System=fwg_processor.missingjobsfwgresult.copy(),
+                        Hatch_System=missing_jobs_hatch.copy(),
+                        HPSCR_System=hpscr_processor.missingjobsHPSCRresult.copy(),
+                        Inactive_Jobs=inactive_processor.missinginactivejobsresult.copy(),
+                        Inert_Gas_System=inertgas_processor.missing_jobs_igsystem.copy(),
+                        Ladder_System=ladder_processor.missingjobsLadderresult.copy(),
+                        Incinerator_System=incin_processor.missingjobsIncinresult.copy(),
+                        LPSCR_System=lpscr_processor.missingjobsLPSCRresult.copy(),
+                        LSA_Mapping=lsamapping_processor.missinglsajobsresult.copy(),
+                        Misc_Jobs=misc_processor.missingmiscjobsresult.copy(),
+                        Mooring_System=mooring_processor.missingjobsMooringresult.copy(),
+                        OWS_System=ows_processor.missingjobsOWSresult.copy(),
+                        Power_Distribution_System=powerdist_processor.missingjobspowerdistresult.copy(),
+                        Purifier_System=missingjobspurifierresult.copy(),
+                        Refac_System=refac_processor.missingjobsrefacresult.copy(),
+                        Steering_System=steering_processor.missingjobsSteeringresult.copy(),
+                        STP_System=stp_processor.missingjobsSTPresult.copy(),
+                        Tank_System=tank_processor.missingjobstankresult.copy(),
+                        Workshop_System=workshop_processor.missingjobsworkshopresult.copy(),
+                    )
+
+                            # 🎯 Metrics Display - grouped layout
+                    col1, col2, col3 = st.columns(3)
+                    col1.metric("🛳️ Vessel", vesselname)
+                    col2.metric("🧾 Total Jobs", totaljobs)
+                    col3.metric("🚨 Critical Jobs", criticaljobscount)
+
+                    col4, col5 = st.columns(2)
+                    col4.metric("❌ Total Missing Jobs", total_missing_jobs)
+                    col5.metric("🔧 Missing Machinery", missing_machinery_count)
+
+                    # 📋 Job Source Summary and CMS Code Count in expandable panel
+                    with st.expander("📋 View Job Source Breakdown"):
+                        try:
+                            jobsource_summary = analyzer.generate_jobsource_summary()
+                            st.dataframe(jobsource_summary, use_container_width=True)
+                            st.metric("🔢 CMS Code Entries", analyzer.cms_code_count)
+                        except Exception as e:
+                            st.warning(f"Job Source Summary unavailable: {e}")
+
+                    # 📊 Missing Jobs Chart (Styled)
+                    if not missing_jobs_df.empty:
+                        st.subheader("📊 Missing Jobs by Machinery System")
+                        import matplotlib.pyplot as plt
+                        fig, ax = plt.subplots(figsize=(12, 6))
+                        bars = ax.bar(missing_jobs_df["Machinery System"], missing_jobs_df["Missing Jobs Count"], color='#5DADE2')
+
+                        for bar in bars:
+                            height = bar.get_height()
+                            ax.text(bar.get_x() + bar.get_width() / 2, height + 0.5, str(int(height)), ha='center', va='bottom', fontsize=9)
+
+                        ax.set_title("📊 Missing Jobs by Machinery System", fontsize=14, weight='bold')
+                        ax.set_xlabel("Machinery System", fontsize=12)
+                        ax.set_ylabel("Missing Jobs Count", fontsize=12)
+                        ax.set_xticks(range(len(missing_jobs_df["Machinery System"])))
+                        ax.set_xticklabels(missing_jobs_df["Machinery System"], rotation=45, ha='right')
+                        ax.grid(axis='y', linestyle='--', alpha=0.5)
+                        st.pyplot(fig)
+
+                    # 📁 Display Missing Jobs Table
+                    st.subheader("🗂 Missing Jobs Summary Table")
+                    st.dataframe(missing_jobs_df, use_container_width=True)
+
+                except Exception as e:
+                    st.error(f"Error in QuickView Summary: {str(e)}")
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         st.exception(e)
