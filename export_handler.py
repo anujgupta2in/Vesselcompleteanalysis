@@ -114,17 +114,22 @@ class ExportHandler:
                     # BAR
                     fig3, ax3 = plt.subplots(figsize=(18, 6))
                     bars = ax3.bar(missing_jobs_df["Machinery System"], missing_jobs_df["Missing Jobs Count"], color='#5DADE2')
+
                     for bar in bars:
                         height = bar.get_height()
                         ax3.text(bar.get_x() + bar.get_width() / 2, height + 0.5, str(int(height)),
-                                 ha='center', va='bottom', fontsize=9)
+                                ha='center', va='bottom', fontsize=9)
+
                     ax3.set_title("Missing Jobs by Machinery System")
                     ax3.set_xlabel("Machinery System")
                     ax3.set_ylabel("Missing Jobs Count")
-                    ax3.tick_params(axis='x', rotation=45)
+                    ax3.tick_params(axis='x', rotation=45, labelsize=9)  # Make label font smaller
                     ax3.grid(axis='y', linestyle='--', alpha=0.5)
+
+                    fig3.tight_layout()  # Ensures everything fits within frame
                     html += self.plot_to_base64(fig3)
                     plt.close(fig3)
+
                 except Exception as chart_err:
                     html += f"<p>Chart generation failed: {chart_err}</p>"
 
