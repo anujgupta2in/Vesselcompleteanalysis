@@ -88,32 +88,48 @@ class QuickViewAnalyzer:
         return result.style.apply(highlight_unknown, subset=['Job Source']).hide(axis='index')
 
     def get_basic_counts(self, **missing_data_sources):
-        # Get missing machinery count from machinery comparison
+        # Get missing machinery count from comparison
         _, miss_df = self.calculate_missing_and_diff()
         self.missing_machinery_count = len(miss_df)
 
-        # Extract vessel/job details
+        # Vessel/job basics
         vesselname = self.df['Vessel'].iloc[0] if 'Vessel' in self.df.columns else 'Unknown'
         totaljobs = self.df['Title'].count()
         criticaljobscount = self.df['Unnamed: 0'].count() if 'Unnamed: 0' in self.df.columns else 0
 
-        # Prepare missing jobs table
+        # Normalize onboard machinery
+        available_machinery = self.df["Machinery Locationcopy"].dropna().astype(str).str.lower().str.strip().unique()
         missing_table_summary = []
+
         for label, df in missing_data_sources.items():
             if isinstance(df, pd.DataFrame):
+                count = 0
+
+                if "Machinery" in df.columns:
+                    # Normalize job machinery
+                    df["Machinery_normalized"] = df["Machinery"].astype(str).str.lower().str.strip()
+
+                    # Filter only rows where machinery appears in onboard list
+                    filtered_df = df[df["Machinery_normalized"].apply(
+                        lambda x: any(x in onboard or onboard in x for onboard in available_machinery)
+                    )]
+
+                    count = len(filtered_df)
+                else:
+                    # If no Machinery column, assume global
+                    count = len(df)
+
+                # Always append result
                 missing_table_summary.append({
                     "Machinery System": label.replace("_", " "),
-                    "Missing Jobs Count": df.shape[0]
+                    "Missing Jobs Count": count
                 })
 
         missing_jobs_df = pd.DataFrame(missing_table_summary).sort_values(by="Missing Jobs Count", ascending=False)
         self.missing_jobs_table = missing_jobs_df
-
         total_missing_jobs = missing_jobs_df['Missing Jobs Count'].sum() if not missing_jobs_df.empty else 0
 
-        # Return all summary metrics including machinery count
         return vesselname, totaljobs, criticaljobscount, total_missing_jobs, missing_jobs_df, self.missing_machinery_count
-
 
 def generate_jobsource_summary(self):
     self.df['Job Source'] = self.df['Job Source'].fillna('Unknown')
