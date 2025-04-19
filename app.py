@@ -168,7 +168,7 @@ if uploaded_file is not None:
 
         # Engine and Equipment Configuration section
         st.header("Engine and Equipment Configuration")
-        
+
         # Engine Type Selection
         st.markdown("""
         <div class="engine-type-info">
@@ -196,7 +196,7 @@ if uploaded_file is not None:
 
         # Show description for selected engine type
         st.info(engine_descriptions[engine_type])
-        
+
         # BWTS Model Selection
         st.markdown("""
         <div class="engine-type-info">
@@ -214,11 +214,11 @@ if uploaded_file is not None:
             "BWTS Techcross": "BWTStechcross",
             "Other BWTS": "BWTS"
         }
-        
+
         # Initialize BWTS model in session state if not already there
         if 'bwts_model' not in st.session_state:
             st.session_state.bwts_model = "BWTS Optimarine"
-            
+
         # Create radio buttons for BWTS model selection
         bwts_model = st.radio(
             "Select BWTS Model",
@@ -226,10 +226,10 @@ if uploaded_file is not None:
             index=0,
             help="Choose the type of Ballast Water Treatment System installed on your vessel"
         )
-        
+
         # Store the selected model in session state
         st.session_state.bwts_model = bwts_model
-        
+
         # Display the selected sheet name that will be used
         st.success(f"Will use reference sheet: {bwts_models[bwts_model]} for BWTS analysis")
 
@@ -241,7 +241,7 @@ if uploaded_file is not None:
         # Validate data
         validator = CSVValidator()
         is_valid, errors = validator.validate_data(data)
-        
+
         # Check if auto-correction was applied
         if '_machinery_location_fixed' in data.columns:
             corrected_count = (data['Machinery Location'] != data['_machinery_location_fixed']).sum()
@@ -251,7 +251,7 @@ if uploaded_file is not None:
                 st.info(f"Auto-corrected {corrected_count} machinery location entries (e.g., 'Auxiliary EngineNo4' → 'Auxiliary Engine#4')")
                 # Remove the temporary column
                 data = data.drop(columns=['_machinery_location_fixed'])
-        
+
         # Show validation results
         if not is_valid:
             st.warning("Data Validation Issues Detected:")
@@ -351,8 +351,8 @@ if uploaded_file is not None:
 
         colA, colB, colC, colD, colE, colF, colG, colH, colI, colJ, colK = st.columns(11)
 
-        
-         
+
+
         with colA:
             if st.button("Main Engine Analysis", key="main_tab"):
                 switch_tab(0)
@@ -456,7 +456,7 @@ if uploaded_file is not None:
         with tab_row_3[9]:
             if st.button("Misc Analysis", key="misc_tab"):
                 switch_tab(31)
-        
+
         tab_row_4 = st.columns(8)
 
         with tab_row_4[0]:
@@ -500,10 +500,10 @@ if uploaded_file is not None:
             if st.button("QuickView Summary", key="quickview_tab"):
                 switch_tab(40)
 
- 
+
         if st.session_state.current_tab == 0:
             st.header("Main Engine Analysis")
-            
+
             # Add Cylinder Unit Analysis
             st.subheader("Main Engine Cylinder Unit Analysis")
             if cylinder_pivot_table is not None:
@@ -538,7 +538,7 @@ if uploaded_file is not None:
                 if task_count is not None and not task_count.empty:
                     # Add a safe display method that converts to HTML to avoid JS errors
                     st.write(task_count.to_html(index=False), unsafe_allow_html=True)
-                    
+
                     # Also provide download option for this table
                     csv = task_count.to_csv(index=False)
                     st.download_button(
@@ -585,15 +585,15 @@ if uploaded_file is not None:
                 # Reference Analysis
                 if ref_sheet is not None:
                     ae_ref_pivot, ae_missing_jobs = ae_processor.process_reference_data(data, ref_sheet)
-                    
+
                     # Always show reference analysis section heading
                     st.subheader("Reference Analysis for Auxiliary Engine")
-                    
+
                     if ae_ref_pivot is not None and not ae_ref_pivot.empty:
                         # Use the HTML rendering approach to avoid JavaScript errors
                         styled_ref_ae = ae_ref_pivot.style.applymap(color_binary_cells)
                         st.dataframe(styled_ref_ae, use_container_width=True)
-                        
+
                         # Provide download option for this reference analysis
                         csv = ae_ref_pivot.to_csv(index=False)
                         st.download_button(
@@ -604,14 +604,14 @@ if uploaded_file is not None:
                         )
                     else:
                         st.info("No reference analysis matching records found for auxiliary engines.")
-                    
+
                     # Always show missing jobs section heading    
                     st.subheader("Missing Jobs for Auxiliary Engine")
-                    
+
                     if ae_missing_jobs is not None and not ae_missing_jobs.empty:
                         # Use the HTML rendering approach to avoid JavaScript errors
                         st.write(ae_missing_jobs.to_html(index=False), unsafe_allow_html=True)
-                        
+
                         # Provide download option for missing jobs
                         csv = ae_missing_jobs.to_csv(index=False)
                         st.download_button(
@@ -687,21 +687,21 @@ if uploaded_file is not None:
                 # These detailed machinery location analysis tables have been removed as requested
             else:
                 st.warning("Reference sheet is required for machinery location analysis. Please upload a reference sheet.")
-        
+
         elif st.session_state.current_tab == 3:
             st.header("Purifier Analysis")
-            
+
             # Initialize PurifierProcessor
             pu_processor = PurifierProcessor()
-            
+
             try:
                 # Running Hours for Purifiers
                 purifier_hours = pu_processor.extract_running_hours(data)
-                
+
                 if not purifier_hours.empty:
                     st.subheader("Purifier Running Hours")
                     st.dataframe(purifier_hours, use_container_width=True)
-                    
+
                     # Create download option for running hours
                     csv = purifier_hours.to_csv(index=False)
                     st.download_button(
@@ -714,7 +714,7 @@ if uploaded_file is not None:
                     st.info("No running hours data available for purifiers.")
             except Exception as e:
                 st.error(f"Error displaying Purifier Running Hours: {str(e)}")
-            
+
             try:
                 # Task Count Analysis
                 st.subheader("Task Count Analysis for Purifiers")
@@ -722,7 +722,7 @@ if uploaded_file is not None:
                 if not task_count.empty:
                     # Use HTML rendering approach to avoid JS errors
                     st.write(task_count.to_html(index=False), unsafe_allow_html=True)
-                    
+
                     # Provide download option
                     csv = task_count.to_csv(index=False)
                     st.download_button(
@@ -735,55 +735,55 @@ if uploaded_file is not None:
                     st.info("No task count data available for purifiers.")
             except Exception as e:
                 st.error(f"Error displaying Task Count Analysis: {str(e)}")
-            
+
             # Component Distribution and Component Analysis removed as requested
-            
+
             try:
                 # Reference Job Analysis
                 if ref_sheet is not None:
                     # Get missing jobs data
                     missing_jobs_purifier = pu_processor.process_reference_data(data, ref_sheet)
-                    
+
                     # Generate result_dfpurifiers data
                     # Create a copy of data to avoid modifications to original
                     data_copy = data.copy()
-                    
+
                     # Filter for purifier jobs
                     filtered_dfpurifierjobs = data_copy[data_copy['Machinery Location'].str.contains('Purifier', case=False, na=False)].copy()
-                    
+
                     # Read the reference sheet
                     ref_sheet_names = pd.ExcelFile(ref_sheet).sheet_names
-                    
+
                     # Look for 'Purifiers' sheet specifically first
                     purifier_sheet = 'Purifiers' if 'Purifiers' in ref_sheet_names else None
-                    
+
                     # If not found, try to find any sheet with 'Purifier' or 'PU' in the name
                     if purifier_sheet is None:
                         for sheet in ref_sheet_names:
                             if 'Purifier' in sheet.lower() or 'PU' in sheet:
                                 purifier_sheet = sheet
                                 break
-                    
+
                     # If still no purifier-specific sheet, use the first sheet
                     if purifier_sheet is None:
                         purifier_sheet = ref_sheet_names[0]
                         print(f"No purifier sheet found in app.py, using the first sheet: {purifier_sheet}")
                     else:
                         print(f"Using reference sheet in app.py: {purifier_sheet}")
-                    
+
                     dfpurifiers = pd.read_excel(ref_sheet, sheet_name=purifier_sheet)
-                    
+
                     # Create Job Codecopy column
                     if 'Job Code' in filtered_dfpurifierjobs.columns:
                         filtered_dfpurifierjobs['Job Codecopy'] = filtered_dfpurifierjobs['Job Code'].astype(str)
-                    
+
                         # Display Reference Jobs for Purifiers
                         st.subheader("Reference Jobs for Purifiers")
                         if not filtered_dfpurifierjobs.empty and not dfpurifiers.empty:
                             try:
                                 # Display the columns in the reference data (for debugging)
                                 print(f"Columns in reference data: {dfpurifiers.columns.tolist()}")
-                                
+
                                 # Check which column to use for job code in reference data
                                 job_code_col = None
                                 for possible_col in ['UI Job Code', 'Job Code', 'JobCode', 'Code']:
@@ -791,19 +791,19 @@ if uploaded_file is not None:
                                         job_code_col = possible_col
                                         print(f"Found job code column: {job_code_col}")
                                         break
-                                
+
                                 if job_code_col is None:
                                     st.error(f"No job code column found in reference data. Available columns: {', '.join(dfpurifiers.columns.tolist())}")
-                                
+
                                 if job_code_col is not None:
                                     # Convert both columns to string to avoid type mismatch
                                     filtered_dfpurifierjobs['Job Codecopy'] = filtered_dfpurifierjobs['Job Codecopy'].astype(str)
                                     dfpurifiers[job_code_col] = dfpurifiers[job_code_col].astype(str)
-                                    
+
                                     # Print sample values from both columns for debugging
                                     print(f"Sample Job Codecopy values: {filtered_dfpurifierjobs['Job Codecopy'].iloc[:5].tolist()}")
                                     print(f"Sample {job_code_col} values: {dfpurifiers[job_code_col].iloc[:5].tolist()}")
-                                    
+
                                     # Merge filtered_dfpurifierjobs with dfpurifiers on matching job codes
                                     result_dfpurifiers = filtered_dfpurifierjobs.merge(
                                         dfpurifiers, 
@@ -811,10 +811,10 @@ if uploaded_file is not None:
                                         right_on=job_code_col, 
                                         suffixes=('_filtered', '_ref')
                                     )
-                                
+
                                     # Reset index of the result DataFrame
                                     result_dfpurifiers.reset_index(drop=True, inplace=True)
-                                    
+
                                     # Check for title column with different possible names
                                     title_col = None
                                     for possible_title in ['Title', 'J3 Job Title', 'Task Description', 'Job Title']:
@@ -822,7 +822,7 @@ if uploaded_file is not None:
                                             title_col = possible_title
                                             print(f"Found title column: {title_col}")
                                             break
-                                    
+
                                     # Create pivot table if we have the necessary columns
                                     if title_col is not None and 'Machinery Location' in result_dfpurifiers.columns:
                                         pivot_table_resultpurifierJobs = result_dfpurifiers.pivot_table(
@@ -831,7 +831,7 @@ if uploaded_file is not None:
                                             values='Job Codecopy', 
                                             aggfunc='count'
                                             ).fillna(0).astype(int)  # Fill NaNs with 0s and convert to int
-                                        
+
                                         # Apply color formatting only to numeric part
                                         # numeric_cols = pivot_table_resultpurifierJobs.select_dtypes(include=[np.number]).columns
                                         styled_pivotpurifier = pivot_table_resultpurifierJobs.style.applymap(color_binary_cells)
@@ -847,7 +847,7 @@ if uploaded_file is not None:
                                                 )
                                             }
                                         )
-                                        
+
                                         # Provide download option
                                         csv_pivot = pivot_table_resultpurifierJobs.to_csv()
                                         st.download_button(
@@ -862,13 +862,13 @@ if uploaded_file is not None:
                                 st.error(f"Error creating purifier reference pivot table: {str(e)}")
                         else:
                             st.info("No reference job data available for purifiers.")
-                    
+
                     # Display Missing Jobs for Purifiers
                     st.subheader("Missing Jobs for Purifiers")
                     if not missing_jobs_purifier.empty:
                         # Use the HTML rendering approach to avoid JavaScript errors
                         st.write(missing_jobs_purifier.to_html(index=False), unsafe_allow_html=True)
-                        
+
                         # Provide download option
                         csv = missing_jobs_purifier.to_csv(index=False)
                         st.download_button(
@@ -883,15 +883,15 @@ if uploaded_file is not None:
                     st.warning("Reference sheet is required for purifier reference analysis. Please upload a reference sheet.")
             except Exception as e:
                 st.error(f"Error displaying Reference Analysis: {str(e)}")
-                
+
         elif st.session_state.current_tab == 4:
             st.header("Ballast Water Treatment System (BWTS) Analysis")
-            
+
             # Initialize BWTSProcessor
             bwts_processor = BWTSProcessor()
-            
+
             # BWTS Running Hours section removed as requested
-            
+
             try:
                 # Task Count Analysis
                 st.subheader("Task Count Analysis for BWTS")
@@ -899,7 +899,7 @@ if uploaded_file is not None:
                 if not task_count.empty:
                     # Use HTML rendering approach to avoid JS errors
                     st.write(task_count.to_html(index=False), unsafe_allow_html=True)
-                    
+
                     # Provide download option
                     csv = task_count.to_csv(index=False)
                     st.download_button(
@@ -912,46 +912,46 @@ if uploaded_file is not None:
                     st.info("No task count data available for BWTS.")
             except Exception as e:
                 st.error(f"Error displaying Task Count Analysis: {str(e)}")
-            
+
             try:
                 # Reference Job Analysis
                 if ref_sheet is not None:
                     # Get the selected BWTS model sheet name from session state
                     selected_bwts_model = st.session_state.bwts_model
                     selected_sheet_name = bwts_models[selected_bwts_model]
-                    
+
                     st.info(f"Using Reference Sheet: {selected_sheet_name} for {selected_bwts_model}")
-                    
+
                     # Get missing jobs data using the selected model's sheet name
                     missing_jobs_bwts = bwts_processor.process_reference_data(data, ref_sheet, preferred_sheet=selected_sheet_name)
-                    
+
                     # Generate result_dfbwts data
                     # Create a copy of data to avoid modifications to original
                     data_copy = data.copy()
-                    
+
                     # Filter for BWTS jobs with more flexible patterns
                     bwts_patterns = ['Ballast Water Treatment Plant', 'BWTS', 'Ballast Treatment']
                     mask = data_copy['Machinery Location'].str.contains('|'.join(bwts_patterns), case=False, na=False)
                     filtered_dfbwtsjobs = data_copy[mask].copy()
-                    
+
                     # Read the reference sheet
                     ref_sheet_names = pd.ExcelFile(ref_sheet).sheet_names
-                    
+
                     # First try to use the selected model sheet
                     bwts_sheet = selected_sheet_name if selected_sheet_name in ref_sheet_names else None
-                    
+
                     # If the selected sheet doesn't exist, fall back to default behavior
                     if bwts_sheet is None:
                         # Look for 'BWTS' sheet
                         bwts_sheet = 'BWTS' if 'BWTS' in ref_sheet_names else None
-                        
+
                         # If not found, try to find any sheet with 'BWTS', 'Ballast' or 'Water' in the name
                         if bwts_sheet is None:
                             for sheet in ref_sheet_names:
                                 if 'BWTS' in sheet or 'Ballast' in sheet or 'Water' in sheet:
                                     bwts_sheet = sheet
                                     break
-                        
+
                         # If still no BWTS-specific sheet, use the first sheet
                         if bwts_sheet is None:
                             bwts_sheet = ref_sheet_names[0]
@@ -960,21 +960,21 @@ if uploaded_file is not None:
                             print(f"Selected sheet '{selected_sheet_name}' not found. Using reference sheet in app.py: {bwts_sheet}")
                     else:
                         print(f"Using selected model sheet in app.py: {bwts_sheet}")
-                    
+
                     # Read the reference sheet
                     dfbwts = pd.read_excel(ref_sheet, sheet_name=bwts_sheet)
-                    
+
                     # Create Job Codecopy column
                     if 'Job Code' in filtered_dfbwtsjobs.columns:
                         filtered_dfbwtsjobs['Job Codecopy'] = filtered_dfbwtsjobs['Job Code'].astype(str)
-                    
+
                         # Display Reference Jobs for BWTS
                         st.subheader("Reference Jobs for BWTS")
                         if not filtered_dfbwtsjobs.empty and not dfbwts.empty:
                             try:
                                 # Display the columns in the reference data (for debugging)
                                 print(f"Columns in reference data: {dfbwts.columns.tolist()}")
-                                
+
                                 # Check which column to use for job code in reference data
                                 job_code_col = None
                                 for possible_col in ['UI Job Code', 'Job Code', 'JobCode', 'Code']:
@@ -982,21 +982,21 @@ if uploaded_file is not None:
                                         job_code_col = possible_col
                                         print(f"Found job code column: {job_code_col}")
                                         break
-                                
+
                                 if job_code_col is not None:
                                     # Convert job codes to string for proper matching
                                     dfbwts[job_code_col] = dfbwts[job_code_col].astype(str)
-                                    
+
                                     # Print sample values for debugging
                                     print(f"Sample Job Codecopy values: {filtered_dfbwtsjobs['Job Codecopy'].iloc[:5].tolist()}")
                                     print(f"Sample {job_code_col} values: {dfbwts[job_code_col].iloc[:5].tolist()}")
-                                    
+
                                     # Merge filtered_dfbwtsjobs with dfbwts on the matching job codes
                                     result_dfbwts = filtered_dfbwtsjobs.merge(dfbwts, left_on='Job Codecopy', right_on=job_code_col, suffixes=('_filtered', '_ref'))
-                                    
+
                                     # Reset index of the result DataFrame
                                     result_dfbwts.reset_index(drop=True, inplace=True)
-                                    
+
                                     # Check for title column with different possible names
                                     title_col = None
                                     for possible_title in ['Title', 'J3 Job Title', 'Task Description', 'Job Title']:
@@ -1004,7 +1004,7 @@ if uploaded_file is not None:
                                             title_col = possible_title
                                             print(f"Found title column: {title_col}")
                                             break
-                                    
+
                                     # Create pivot table if we have the necessary columns
                                     if title_col is not None and 'Machinery Location' in result_dfbwts.columns:
                                         pivot_table_resultbwtsJobs = result_dfbwts.pivot_table(
@@ -1013,10 +1013,10 @@ if uploaded_file is not None:
                                             values='Job Codecopy', 
                                             aggfunc='count'
                                         )
-                                        
+
                                         # Display the pivot table
                                         st.write(pivot_table_resultbwtsJobs.to_html(), unsafe_allow_html=True)
-                                        
+
                                         # Provide download option
                                         csv_pivot = pivot_table_resultbwtsJobs.to_csv()
                                         st.download_button(
@@ -1033,13 +1033,13 @@ if uploaded_file is not None:
                                 st.error(f"Error creating BWTS reference pivot table: {str(e)}")
                         else:
                             st.info("No reference job data available for BWTS.")
-                    
+
                     # Display Missing Jobs for BWTS
                     st.subheader("Missing Jobs for BWTS")
                     if not missing_jobs_bwts.empty:
                         # Use the HTML rendering approach to avoid JavaScript errors
                         st.write(missing_jobs_bwts.to_html(index=False), unsafe_allow_html=True)
-                        
+
                         # Provide download option
                         csv = missing_jobs_bwts.to_csv(index=False)
                         st.download_button(
@@ -1054,13 +1054,13 @@ if uploaded_file is not None:
                     st.warning("Reference sheet is required for BWTS reference analysis. Please upload a reference sheet.")
             except Exception as e:
                 st.error(f"Error displaying Reference Analysis: {str(e)}")
-                
+
         elif st.session_state.current_tab == 5:
             st.header("Hatch Analysis")
-            
+
             # Initialize HatchProcessor
             hatch_processor = HatchProcessor()
-            
+
             try:
                 # Task Count Analysis
                 st.subheader("Task Count Analysis for Hatches")
@@ -1068,7 +1068,7 @@ if uploaded_file is not None:
                 if not task_count.empty:
                     # Use HTML rendering approach to avoid JS errors
                     st.write(task_count.to_html(index=False), unsafe_allow_html=True)
-                    
+
                     # Provide download option
                     csv = task_count.to_csv(index=False)
                     st.download_button(
@@ -1081,15 +1081,15 @@ if uploaded_file is not None:
                     st.info("No task count data available for hatches.")
             except Exception as e:
                 st.error(f"Error displaying Task Count Analysis: {str(e)}")
-            
 
-            
+
+
             try:
                 # Reference Job Analysis
                 if ref_sheet is not None:
                     # Create reference pivot table for Hatch Covers
                     pivot_table_hatch = hatch_processor.create_reference_pivot_table(data, ref_sheet)
-                    
+
                     # Display Reference Jobs Pivot Table for Hatch Covers 
                     st.subheader("Reference Jobs for Hatch Covers")
                     if not pivot_table_hatch.empty:
@@ -1122,16 +1122,16 @@ if uploaded_file is not None:
                         )
                     else:
                         st.info("No reference jobs pivot table available for hatches.")
-                    
+
                     # Get missing jobs data
                     missing_jobs_hatch = hatch_processor.process_reference_data(data, ref_sheet)
-                    
+
                     # Display Missing Jobs for Hatch Covers
                     st.subheader("Missing Jobs for Hatch Covers")
                     if not missing_jobs_hatch.empty:
                         # Use the HTML rendering approach to avoid JavaScript errors
                         st.write(missing_jobs_hatch.to_html(index=False), unsafe_allow_html=True)
-                        
+
                         # Provide download option
                         csv = missing_jobs_hatch.to_csv(index=False)
                         st.download_button(
@@ -1146,7 +1146,7 @@ if uploaded_file is not None:
                     st.warning("Reference sheet is required for hatch reference analysis. Please upload a reference sheet.")
             except Exception as e:
                 st.error(f"Error displaying Reference Analysis: {str(e)}")
-        
+
         elif st.session_state.current_tab == 6:
             st.header("Cargo Pumping System Analysis")
 
@@ -1531,7 +1531,7 @@ if uploaded_file is not None:
                 else:
                     st.warning("Reference sheet is required for Fire Fighting System analysis.")
 
-        
+
         elif st.session_state.current_tab == 12:
                 st.header("Pump System Analysis")
 
@@ -3387,6 +3387,51 @@ if uploaded_file is not None:
                     col4.metric("❌ Total Missing Jobs", total_missing_jobs)
                     col5.metric("🔧 Missing Machinery", missing_machinery_count)
 
+                    # 📊 Add Pie Charts for Job and Machinery Comparison
+                    import matplotlib.pyplot as plt
+
+                    try:
+                        def generate_pie_chart_with_values(labels, values, title):
+                            fig, ax = plt.subplots(figsize=(4, 4))  # Smaller chart size
+                            total = sum(values)
+
+                            def format_label(pct):
+                                absolute = int(round(pct / 100. * total))
+                                return f"{pct:.1f}%\n({absolute})"
+
+                            wedges, texts, autotexts = ax.pie(
+                                values, labels=labels, autopct=lambda pct: format_label(pct),
+                                startangle=90, textprops=dict(color="black")
+                            )
+                            ax.set_title(title, fontsize=10)
+                            ax.axis('equal')
+                            return fig
+
+                        # 📊 Layout: Side-by-side columns
+                        col_pie1, col_pie2 = st.columns(2)
+
+                        with col_pie1:
+                            st.subheader("📊 Jobs Summary")
+                            job_pie = generate_pie_chart_with_values(
+                                ["Present Jobs", "Missing Jobs"],
+                                [totaljobs - total_missing_jobs, total_missing_jobs],
+                                "Total Jobs vs Missing Jobs"
+                            )
+                            st.pyplot(job_pie)
+
+                        with col_pie2:
+                            st.subheader("⚙️ Machinery Summary")
+                            total_onboard_machinery = len(analyzer.df['Machinery Locationcopy'].dropna().astype(str).str.lower().str.strip().unique())
+                            mach_pie = generate_pie_chart_with_values(
+                                ["Present Machinery", "Missing Machinery"],
+                                [total_onboard_machinery - missing_machinery_count, missing_machinery_count],
+                                "Total Machinery vs Missing Machinery"
+                            )
+                            st.pyplot(mach_pie)
+
+                    except Exception as pie_err:
+                        st.warning(f"⚠️ Unable to render pie charts: {pie_err}")
+
                     # 📋 Job Source Summary and CMS Code Count in expandable panel
                     with st.expander("📋 View Job Source Breakdown"):
                         try:
@@ -3426,7 +3471,7 @@ if uploaded_file is not None:
         st.exception(e)
 else:
     st.info("Please upload a data file to begin analysis.")
-    
+
     # Show sample data format guide
     with st.expander("Data Format Guide"):
         st.markdown("""
@@ -3438,7 +3483,7 @@ else:
         - **Calculated Due Date**: When the maintenance is due
         - **Machinery Location**: Where the equipment is located
         - **Sub Component Location**: Component details
-        
+
         ### Engine Types
         The application supports analysis for different engine types:
         - **Normal Main Engine**: Standard main engine configuration
@@ -3447,7 +3492,7 @@ else:
         - **RTA Engine**: Mechanical engines
         - **UEC Engine**: Mitsubishi engines
         - **WINGD Engine**: WinGD X series engines
-        
+
         ### Reference Sheet
         For comprehensive analysis, upload a reference sheet with the same column structure that contains expected maintenance data.
         """)
