@@ -3413,8 +3413,8 @@ if uploaded_file is not None:
                         with col_pie1:
                             st.subheader("📊 Jobs Summary")
                             job_pie = generate_pie_chart_with_values(
-                                ["Present Jobs", "Missing Jobs"],
-                                [totaljobs - total_missing_jobs, total_missing_jobs],
+                                ["Total Jobs", "Missing Jobs"],
+                                [totaljobs, total_missing_jobs],
                                 "Total Jobs vs Missing Jobs"
                             )
                             st.pyplot(job_pie)
