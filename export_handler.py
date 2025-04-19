@@ -1,202 +1,172 @@
 import pandas as pd
 import io
 import datetime
-import re
+import base64
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 class ExportHandler:
     def __init__(self, data, engine_type):
-        """Initialize the ExportHandler."""
         self.data = data
         self.engine_type = engine_type
         self.timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
         self.vessel_name = data['Vessel'].iloc[0] if 'Vessel' in data.columns and not data.empty else "Vessel"
-    
-    def _apply_excel_styling(self, writer, df, sheet_name):
-        """Apply styling to Excel worksheet."""
-        workbook = writer.book
-        worksheet = writer.sheets[sheet_name]
-        
-        # Define formats
-        header_format = workbook.add_format({
-            'bold': True,
-            'text_wrap': True,
-            'valign': 'top',
-            'fg_color': '#D7E4BC',
-            'border': 1
-        })
-        
-        # Apply header format
-        for col_num, value in enumerate(df.columns.values):
-            worksheet.write(0, col_num, value, header_format)
-            
-        # Auto-adjust columns width
-        for column in df:
-            column_width = max(df[column].astype(str).map(len).max(), len(column))
-            col_idx = df.columns.get_loc(column)
-            worksheet.set_column(col_idx, col_idx, column_width)
-    
-    def generate_full_report(self, main_engine_data, aux_engine_data, pivot_table, 
-                           cylinder_pivot_table, component_status, missing_count,
-                           main_engine_running_hours, aux_running_hours):
-        """Generate a full report with all analysis."""
-        try:
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Summary Sheet
-                summary_data = pd.DataFrame({
-                    'Item': ['Vessel Name', 'Engine Type', 'Report Date', 
-                             'Main Engine Running Hours', 'AE1 Running Hours', 
-                             'AE2 Running Hours', 'AE3 Running Hours',
-                             'Missing Components Count'],
-                    'Value': [self.vessel_name, self.engine_type, self.timestamp,
-                              main_engine_running_hours,
-                              aux_running_hours['AE1'],
-                              aux_running_hours['AE2'],
-                              aux_running_hours['AE3'],
-                              missing_count]
-                })
-                summary_data.to_excel(writer, sheet_name='Summary', index=False)
-                self._apply_excel_styling(writer, summary_data, 'Summary')
-                
-                # Concatenate main engine data if it's a list of DataFrames
-                if isinstance(main_engine_data, list):
-                    me_data = pd.concat(main_engine_data)
-                else:
-                    me_data = main_engine_data
-                
-                # Main Engine Analysis
-                if not me_data.empty:
-                    me_data.to_excel(writer, sheet_name='Main Engine Analysis', index=False)
-                    self._apply_excel_styling(writer, me_data, 'Main Engine Analysis')
-                
-                # Component Analysis
-                if pivot_table is not None and not pivot_table.empty:
-                    pivot_table.to_excel(writer, sheet_name='Component Analysis')
-                    self._apply_excel_styling(writer, pivot_table, 'Component Analysis')
-                
-                # Cylinder Analysis
-                if cylinder_pivot_table is not None and not cylinder_pivot_table.empty:
-                    cylinder_pivot_table.to_excel(writer, sheet_name='Cylinder Analysis')
-                    self._apply_excel_styling(writer, cylinder_pivot_table, 'Cylinder Analysis')
-                
-                # Component Status
-                if component_status is not None and not component_status.empty:
-                    component_status.to_excel(writer, sheet_name='Component Status', index=False)
-                    self._apply_excel_styling(writer, component_status, 'Component Status')
-                
-                # Auxiliary Engine Analysis
-                if aux_engine_data is not None and not aux_engine_data.empty:
-                    aux_engine_data.to_excel(writer, sheet_name='Auxiliary Engine Data', index=False)
-                    self._apply_excel_styling(writer, aux_engine_data, 'Auxiliary Engine Data')
-                
-            output.seek(0)
-            return output.getvalue()
-            
-        except Exception as e:
-            print(f"Error generating full report: {str(e)}")
-            # Return a minimal report with error information
-            output = io.BytesIO()
-            pd.DataFrame({'Error': [f"Failed to generate report: {str(e)}"]}).to_excel(output, index=False)
-            output.seek(0)
-            return output.getvalue()
-    
-    def generate_main_engine_report(self, main_engine_data, pivot_table, 
-                                  cylinder_pivot_table, component_status, missing_count,
-                                  main_engine_running_hours):
-        """Generate a report focused on main engine analysis."""
-        try:
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Summary Sheet
-                summary_data = pd.DataFrame({
-                    'Item': ['Vessel Name', 'Engine Type', 'Report Date', 
-                             'Main Engine Running Hours', 'Missing Components Count'],
-                    'Value': [self.vessel_name, self.engine_type, self.timestamp,
-                              main_engine_running_hours, missing_count]
-                })
-                summary_data.to_excel(writer, sheet_name='Summary', index=False)
-                self._apply_excel_styling(writer, summary_data, 'Summary')
-                
-                # Concatenate main engine data if it's a list of DataFrames
-                if isinstance(main_engine_data, list):
-                    me_data = pd.concat(main_engine_data)
-                else:
-                    me_data = main_engine_data
-                
-                # Main Engine Analysis
-                if not me_data.empty:
-                    me_data.to_excel(writer, sheet_name='Main Engine Analysis', index=False)
-                    self._apply_excel_styling(writer, me_data, 'Main Engine Analysis')
-                
-                # Component Analysis
-                if pivot_table is not None and not pivot_table.empty:
-                    pivot_table.to_excel(writer, sheet_name='Component Analysis')
-                    self._apply_excel_styling(writer, pivot_table, 'Component Analysis')
-                
-                # Cylinder Analysis
-                if cylinder_pivot_table is not None and not cylinder_pivot_table.empty:
-                    cylinder_pivot_table.to_excel(writer, sheet_name='Cylinder Analysis')
-                    self._apply_excel_styling(writer, cylinder_pivot_table, 'Cylinder Analysis')
-                
-                # Component Status
-                if component_status is not None and not component_status.empty:
-                    component_status.to_excel(writer, sheet_name='Component Status', index=False)
-                    self._apply_excel_styling(writer, component_status, 'Component Status')
-                
-            output.seek(0)
-            return output.getvalue()
-            
-        except Exception as e:
-            print(f"Error generating main engine report: {str(e)}")
-            output = io.BytesIO()
-            pd.DataFrame({'Error': [f"Failed to generate report: {str(e)}"]}).to_excel(output, index=False)
-            output.seek(0)
-            return output.getvalue()
-    
-    def generate_auxiliary_engine_report(self, aux_engine_data, aux_running_hours):
-        """Generate a report focused on auxiliary engine analysis."""
-        try:
-            output = io.BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                # Summary Sheet
-                summary_data = pd.DataFrame({
-                    'Item': ['Vessel Name', 'Report Date', 'AE1 Running Hours', 
-                             'AE2 Running Hours', 'AE3 Running Hours'],
-                    'Value': [self.vessel_name, self.timestamp,
-                              aux_running_hours['AE1'],
-                              aux_running_hours['AE2'],
-                              aux_running_hours['AE3']]
-                })
-                summary_data.to_excel(writer, sheet_name='Summary', index=False)
-                self._apply_excel_styling(writer, summary_data, 'Summary')
-                
-                # Auxiliary Engine Analysis
-                if aux_engine_data is not None and not aux_engine_data.empty:
-                    aux_engine_data.to_excel(writer, sheet_name='Auxiliary Engine Data', index=False)
-                    self._apply_excel_styling(writer, aux_engine_data, 'Auxiliary Engine Data')
-                    
-                    # Task Analysis by Engine
-                    ae_numbers = []
-                    for loc in aux_engine_data['Machinery Location'].dropna().unique():
-                        match = re.search(r'Auxiliary Engine[\s-]*#?(\d+)', loc)
-                        if match:
-                            ae_numbers.append(match.group(1))
-                    
-                    if ae_numbers:
-                        task_analysis = pd.DataFrame({'AE Number': ae_numbers})
-                        task_analysis['Task Count'] = task_analysis['AE Number'].apply(
-                            lambda x: len(aux_engine_data[aux_engine_data['Machinery Location'].str.contains(
-                                f'Auxiliary Engine[\s-]*#?{x}', regex=True, na=False)])
-                        )
-                        task_analysis.to_excel(writer, sheet_name='Task Analysis', index=False)
-                        self._apply_excel_styling(writer, task_analysis, 'Task Analysis')
-                
-            output.seek(0)
-            return output.getvalue()
-            
-        except Exception as e:
-            print(f"Error generating auxiliary engine report: {str(e)}")
-            output = io.BytesIO()
-            pd.DataFrame({'Error': [f"Failed to generate report: {str(e)}"]}).to_excel(output, index=False)
-            output.seek(0)
-            return output.getvalue()
+
+    def plot_to_base64(self, fig):
+        buf = BytesIO()
+        fig.savefig(buf, format="png", bbox_inches='tight')
+        buf.seek(0)
+        encoded = base64.b64encode(buf.read()).decode("utf-8")
+        buf.close()
+        return f'<img src="data:image/png;base64,{encoded}" style="max-width:100%;">'
+
+    def export_all_tabs_to_html(self, tab_data_dict, totaljobs=0, total_missing_jobs=0,
+                                total_machinery=0, missing_machinery=0, vesselname="Vessel",
+                                criticaljobscount=0, main_engine_jobs=0, ae_jobs=0):
+        from report_styler import ReportStyler
+
+        styler = ReportStyler()
+        css = styler.generate_html_styles(
+            styler.get_color_scheme(),
+            styler.get_font_settings(),
+            styler.get_table_settings()
+        )
+
+        html = f"""
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <style>
+            {css}
+            #homeButton {{
+                position: fixed; bottom: 30px; right: 30px; z-index: 1000;
+                background-color: #007bff; color: white; padding: 10px 15px;
+                border: none; border-radius: 5px; text-decoration: none;
+                font-size: 14px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            }}
+            .metric-summary {{
+                display: flex; flex-wrap: wrap; justify-content: space-around;
+                margin-bottom: 20px;
+            }}
+            .metric-card {{
+                background: #f8f9fa; padding: 20px; margin: 10px;
+                border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                flex: 1 1 200px; text-align: center;
+            }}
+            .metric-title {{ font-weight: bold; color: #333; }}
+            .metric-value {{ font-size: 1.5em; color: #007bff; }}
+            </style>
+        </head>
+        <body>
+        <a name="top"></a>
+        <h1 style='text-align:center;'>Vessel Maintenance Report</h1>
+        <hr><h2>Navigation</h2><ul>
+        """
+
+        for tab in tab_data_dict.keys():
+            anchor = tab.replace(" ", "_").replace("(", "").replace(")", "")
+            html += f'<li><a href="#{anchor}">{tab}</a></li>'
+        html += "</ul><hr>"
+
+        # Metrics block (top)
+        html += f"""
+        <div class="metric-summary">
+            <div class="metric-card"><div class="metric-title">🛳️ Vessel</div><div class="metric-value">{vesselname}</div></div>
+            <div class="metric-card"><div class="metric-title">🧾 Total Jobs</div><div class="metric-value">{totaljobs}</div></div>
+            <div class="metric-card"><div class="metric-title">🚨 Critical Jobs</div><div class="metric-value">{criticaljobscount}</div></div>
+            <div class="metric-card"><div class="metric-title">❌ Total Missing Jobs</div><div class="metric-value">{total_missing_jobs}</div></div>
+            <div class="metric-card"><div class="metric-title">🔧 Missing Machinery</div><div class="metric-value">{missing_machinery}</div></div>
+        </div>
+        """
+
+        for tab, tables in tab_data_dict.items():
+            anchor = tab.replace(" ", "_").replace("(", "").replace(")", "")
+            html += f'<h2 id="{anchor}">{tab}</h2>'
+
+            if tab == "QuickView Summary":
+                try:
+                    missing_jobs_df = tables[0]
+
+                    # PIE 1
+                    fig1, ax1 = plt.subplots(figsize=(4, 4))
+                    wedges1, texts1, autotexts1 = ax1.pie(
+                        [totaljobs, total_missing_jobs],
+                        labels=["Total Jobs", "Missing Jobs"],
+                        autopct=lambda pct: f'{int(pct * (totaljobs + total_missing_jobs) / 100)} ({pct:.1f}%)'
+                    )
+                    ax1.axis("equal")
+                    ax1.set_title("Total Jobs vs Missing Jobs")
+                    html += self.plot_to_base64(fig1)
+                    plt.close(fig1)
+
+                    # PIE 2
+                    fig2, ax2 = plt.subplots(figsize=(4, 4))
+                    wedges2, texts2, autotexts2 = ax2.pie(
+                        [total_machinery, missing_machinery],
+                        labels=["Present", "Missing"],
+                        autopct=lambda pct: f'{int(pct * (total_machinery + missing_machinery) / 100)} ({pct:.1f}%)'
+                    )
+                    ax2.axis("equal")
+                    ax2.set_title("Machinery Summary")
+                    html += self.plot_to_base64(fig2)
+                    plt.close(fig2)
+
+                    # BAR
+                    fig3, ax3 = plt.subplots(figsize=(18, 6))
+                    bars = ax3.bar(missing_jobs_df["Machinery System"], missing_jobs_df["Missing Jobs Count"], color='#5DADE2')
+                    for bar in bars:
+                        height = bar.get_height()
+                        ax3.text(bar.get_x() + bar.get_width() / 2, height + 0.5, str(int(height)),
+                                 ha='center', va='bottom', fontsize=9)
+                    ax3.set_title("Missing Jobs by Machinery System")
+                    ax3.set_xlabel("Machinery System")
+                    ax3.set_ylabel("Missing Jobs Count")
+                    ax3.tick_params(axis='x', rotation=45)
+                    ax3.grid(axis='y', linestyle='--', alpha=0.5)
+                    html += self.plot_to_base64(fig3)
+                    plt.close(fig3)
+                except Exception as chart_err:
+                    html += f"<p>Chart generation failed: {chart_err}</p>"
+
+            for i, df in enumerate(tables):
+                if isinstance(df, pd.DataFrame) and not df.empty:
+                    if "Main Engine" in tab:
+                        titles = [
+                            "Maintenance Data for Main Engine",
+                            "Main Engine Cylinder Unit Analysis",
+                            "Reference Analysis for Main Engine",
+                            "Missing Jobs for Main Engine",
+                            "Component Status Analysis for Main Engine",
+                            "Number of Missing Components for Main Engine"
+                        ]
+                        title = titles[i] if i < len(titles) else f"Main Engine Table {i+1}"
+                    elif "Auxiliary Engine" in tab:
+                        titles = [
+                            "Task Count Analysis for Auxiliary Engine",
+                            "Component Distribution for Auxiliary Engine",
+                            "Component Status Analysis for Auxiliary Engine",
+                            "Reference Analysis for Auxiliary Engine",
+                            "Missing Jobs for Auxiliary Engine"
+                        ]
+                        title = titles[i] if i < len(titles) else f"Auxiliary Engine Table {i+1}"
+                    else:
+                        title = f"Table {i+1}"
+
+                    try:
+                        def color_cells(val):
+                            try:
+                                val = int(val)
+                                if val == 0: return "background-color: #dc3545"
+                                elif val == 1: return "background-color: #28a745"
+                                elif val > 5: return "background-color: #fd7e14"
+                            except: return ""
+
+                        styled_df = df.style.applymap(color_cells, subset=df.select_dtypes(include='number').columns)
+                        html += f"<h4>{title}</h4>" + styled_df.to_html(index=False, border=0)
+                    except Exception:
+                        html += f"<h4>{title}</h4>" + df.to_html(index=False, border=0)
+
+            html += '<a href="#top" id="homeButton">Home</a><hr>'
+
+        html += "</body></html>"
+        return html

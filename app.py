@@ -298,26 +298,170 @@ if uploaded_file is not None:
             st.metric("AE3", value=aux_running_hours['AE3'] if aux_running_hours['AE3'] != "Not Available" else "N/A",
                       help="Auxiliary Engine 3 Running Hours")
 
+
+        
+
         # Initialize Export Handler
         export_handler = ExportHandler(data, engine_type)
+
+
 
         # Add export buttons
         st.subheader("Export Options")
         col1, col2, col3 = st.columns(3)
+     
         with col1:
-            if st.button("Export Full Report"):
-                export_link = export_handler.generate_full_report(
-                    main_engine_data, aux_engine_data, pivot_table, 
-                    cylinder_pivot_table, component_status, missing_count,
-                    main_engine_running_hours, aux_running_hours
-                )
-                st.success(f"Report generated successfully!")
-                st.download_button(
-                    label="Download Full Report",
-                    data=export_link,
-                    file_name=f"{vessel_name}_full_report.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+            try:
+                if st.button("📥 Export Full HTML Report", key="export_html_btn"):
+                    export_handler = ExportHandler(data, engine_type)
+
+                    # ✅ Re-run QuickViewAnalyzer to get missing_jobs_df
+                    ref_sheets = pd.read_excel(ref_sheet, sheet_name=None)
+                    dfML = ref_sheets.get('Machinery Location', pd.DataFrame())
+                    dfCM = ref_sheets.get('Critical Machinery', pd.DataFrame())
+                    dfVSM = ref_sheets.get('Vessel Specific Machinery', pd.DataFrame())
+
+                    analyzer = QuickViewAnalyzer(data, dfML, dfCM, dfVSM)
+
+                    ae_ref_pivot, ae_missing_jobs = ae_processor.process_reference_data(data, ref_sheet)
+                    main_engine_data, *_ , missing_jobs, _ = process_engine_data(data, ref_sheet, engine_type)
+                    aux_task_count = ae_processor.create_task_count_table(data)
+                    aux_component_dist = ae_processor.create_component_distribution(data)
+                    aux_component_status, aux_missing_component_count = ae_processor.analyze_components(data)
+                    ref_sheets = pd.read_excel(ref_sheet, sheet_name=None)
+                    dfML = ref_sheets.get('Machinery Location', pd.DataFrame())
+                    dfCM = ref_sheets.get('Critical Machinery', pd.DataFrame())
+                    dfVSM = ref_sheets.get('Vessel Specific Machinery', pd.DataFrame())
+
+                    analyzer = QuickViewAnalyzer(data, dfML, dfCM, dfVSM)
+
+                    ae_ref_pivot, ae_missing_jobs = ae_processor.process_reference_data(data, ref_sheet)
+                    battery_processor.process_battery_data(data, ref_sheets.get("Battery", pd.DataFrame()))
+                    boat_processor.process_boat_data(data, ref_sheets.get("Boats", pd.DataFrame()))
+                    boiler_processor.process_boiler_data(data, ref_sheets.get("Boiler", pd.DataFrame()))
+                    bridge_processor.process_bridge_data(data, ref_sheets.get("Bridge", pd.DataFrame()))
+                    bt_processor.process_bt_data(data, ref_sheets.get("Bow Thruster", pd.DataFrame()))
+                    bwts_missing_jobs = bwts_processor.process_reference_data(data, ref_sheet)
+
+                    chs_processor = CargoHandlingSystemProcessor()
+                    dfCargoHandling = pd.read_excel(ref_sheet, sheet_name="Cargohanding")
+                    chs_processor.process_reference_data(data, ref_sheet)
+
+                    cargopumping_processor.process_reference_data(data, ref_sheet)
+                    cargoventing_processor.process_reference_data(data, ref_sheet)
+                    compressor_processor.process_compressor_data(data, ref_sheets.get("Compressor", pd.DataFrame()))
+                    crane_processor.process_crane_data(data, ref_sheets.get("Crane", pd.DataFrame()))
+                    critical_processor.process_critical_data(data, ref_sheets.get("criticalmapping", pd.DataFrame()))
+                    main_engine_data, *_ , missing_jobs, _ = process_engine_data(data, ref_sheet, engine_type)
+                    ffamapping_processor.process_ffa_data(data, pd.read_excel(ref_sheet, sheet_name="ffamapping"))
+                    fwg_processor.process_fwg_data(data, pd.read_excel(ref_sheet, sheet_name="FWG"))
+                    missing_jobs_hatch = hatch_processor.process_reference_data(data, ref_sheet)
+                    hpscr_processor.process_hpscr_data(data, pd.read_excel(ref_sheet, sheet_name="HPSCRHITACHI"))
+                    inactive_processor.process_inactive_data(data, pd.read_excel(ref_sheet, sheet_name="inactivemapping"))
+                    inertgas_processor.process_reference_data(data, ref_sheet)
+                    ladder_processor.process_ladder_data(data, pd.read_excel(ref_sheet, sheet_name="Ladders"))
+                    incin_processor.process_incin_data(data, pd.read_excel(ref_sheet, sheet_name="Incin"))
+                    lpscr_processor.process_lpscr_data(data, pd.read_excel(ref_sheet, sheet_name="LPSCRYANMAR"))
+                    lsamapping_processor.process_lsa_data(data, pd.read_excel(ref_sheet, sheet_name="lsamapping"))
+                    misc_processor.process_misc_data(data, pd.read_excel(ref_sheet, sheet_name="Misc"))
+                    mooring_processor.process_mooring_data(data, pd.read_excel(ref_sheet, sheet_name="Mooring"))
+                    ows_processor.process_ows_data(data, pd.read_excel(ref_sheet, sheet_name="OWS"))
+                    powerdist_processor.process_powerdist_data(data, pd.read_excel(ref_sheet, sheet_name="Powerdist"))
+                    missingjobspurifierresult = purifier_processor.process_reference_data(data, ref_sheet)
+                    refac_processor.process_refac_data(data, pd.read_excel(ref_sheet, sheet_name="Refac"))
+                    steering_processor.process_steering_data(data, pd.read_excel(ref_sheet, sheet_name="Steering"))
+                    stp_processor.process_stp_data(data, pd.read_excel(ref_sheet, sheet_name="STP"))
+                    tank_processor.process_tank_data(data, pd.read_excel(ref_sheet, sheet_name="Tanks"))
+                    workshop_processor.process_workshop_data(data, pd.read_excel(ref_sheet, sheet_name="Workshop"))
+
+
+                    # Add more processors if needed here...
+
+                    vesselname, totaljobs, criticaljobscount, total_missing_jobs, missing_jobs_df, missing_machinery_count = analyzer.get_basic_counts(
+                                            ae_missing_jobs=ae_missing_jobs,
+                                            battery_missing_jobs=battery_processor.missingjobsbatteryresult,
+                                            boat_missing_jobs=boat_processor.missingjobsBoatsresult,
+                                            boiler_missing_jobs=boiler_processor.missingjobsboilerresult,
+                                            bridge_missing_jobs=bridge_processor.missingjobsbridgeresult,
+                                            bt_missing_jobs=bt_processor.missingjobsBTresult,
+                                            bwts_missing_jobs=bwts_missing_jobs,
+                                            Cargo_Handling_System=chs_processor.missing_jobs_cargohandling.copy(),
+                                            Cargo_Pumping_System=cargopumping_processor.missingjobscargopumpingresult.copy(),
+                                            Cargo_Venting_System=cargoventing_processor.missing_jobs_cargovent.copy(),
+                                            compressor_missing_jobs=compressor_processor.missingjobsCompressorresult,
+                                            crane_missing_jobs=crane_processor.missingjobscraneresult,
+                                            Critical_Jobs=critical_processor.missingcriticaljobsresult.copy(),
+                                            Main_Engine=missing_jobs.copy(),
+                                            FFA_Mapping=ffamapping_processor.missingffajobsresult.copy(),
+                                            FWG_System=fwg_processor.missingjobsfwgresult.copy(),
+                                            Hatch_System=missing_jobs_hatch.copy(),
+                                            HPSCR_System=hpscr_processor.missingjobsHPSCRresult.copy(),
+                                            Inactive_Jobs=inactive_processor.missinginactivejobsresult.copy(),
+                                            Inert_Gas_System=inertgas_processor.missing_jobs_igsystem.copy(),
+                                            Ladder_System=ladder_processor.missingjobsLadderresult.copy(),
+                                            Incinerator_System=incin_processor.missingjobsIncinresult.copy(),
+                                            LPSCR_System=lpscr_processor.missingjobsLPSCRresult.copy(),
+                                            LSA_Mapping=lsamapping_processor.missinglsajobsresult.copy(),
+                                            Misc_Jobs=misc_processor.missingmiscjobsresult.copy(),
+                                            Mooring_System=mooring_processor.missingjobsMooringresult.copy(),
+                                            OWS_System=ows_processor.missingjobsOWSresult.copy(),
+                                            Power_Distribution_System=powerdist_processor.missingjobspowerdistresult.copy(),
+                                            Purifier_System=missingjobspurifierresult.copy(),
+                                            Refac_System=refac_processor.missingjobsrefacresult.copy(),
+                                            Steering_System=steering_processor.missingjobsSteeringresult.copy(),
+                                            STP_System=stp_processor.missingjobsSTPresult.copy(),
+                                            Tank_System=tank_processor.missingjobstankresult.copy(),
+                                            Workshop_System=workshop_processor.missingjobsworkshopresult.copy(),
+                                        )
+
+
+                    # ✅ Collect all exportable tables
+                    all_tab_tables = {
+                        "QuickView Summary": [missing_jobs_df],
+                        "Main Engine": [
+                            main_engine_data,                  # ➤ Maintenance Data for Main Engine
+                            cylinder_pivot_table,             # ➤ Main Engine Cylinder Unit Analysis
+                            ref_pivot_table,                  # ➤ Reference Analysis Main Engine
+                            missing_jobs,                     # ➤ Missing Jobs for Main Engine
+                            component_status,                 # ➤ Component Status Analysis for Main Engine
+                            missing_count                     # ➤ Number of missing components for Main Engine
+                        ],
+                            "Auxiliary Engine": [
+                                aux_task_count,
+                                aux_component_dist,
+                                aux_component_status,
+                                ae_ref_pivot,
+                                ae_missing_jobs
+                            ],
+                            
+                    }
+
+                    html_report = export_handler.export_all_tabs_to_html(
+                                all_tab_tables,
+                                totaljobs=totaljobs,
+                                total_missing_jobs=total_missing_jobs,
+                                total_machinery=len(dfML),
+                                missing_machinery=missing_machinery_count,
+                                vesselname=vesselname,
+                                criticaljobscount=criticaljobscount
+                            )
+
+
+                    filename = f"{data['Vessel'].iloc[0]}_Maintenance_Report.html" if "Vessel" in data.columns else "Maintenance_Report.html"
+
+                    st.success("✅ Full HTML Report generated successfully!")
+                    st.download_button(
+                        label="📄 Download Full Report",
+                        data=html_report,
+                        file_name=filename,
+                        mime="text/html",
+                        key="download_html_btn"
+                    )
+
+            except Exception as e:
+                st.error(f"❌ Error exporting HTML report: {e}")
+
+
         with col2:
             if st.button("Export Main Engine Report"):
                 me_export = export_handler.generate_main_engine_report(
