@@ -1,131 +1,255 @@
-import pandas as pd
-
 class ReportStyler:
-    """A class to handle styling of dataframes for reports."""
+    """
+    Class to provide styling for reports, particularly HTML reports.
+    """
     
     def __init__(self):
-        """Initialize the ReportStyler with color mappings."""
-        # Define color mappings for statuses
-        self.status_colors = {
-            'Present': '#28a745',  # Green
-            'Missing': '#dc3545',  # Red
-            'Different from Reference': '#ffc107',  # Amber
-            'Missing from Vessel': '#17a2b8'  # Cyan
+        """Initialize the ReportStyler with default settings."""
+        self.color_scheme = {
+            'primary': '#1E88E5',
+            'secondary': '#26A69A',
+            'background': '#FFFFFF',
+            'text': '#333333',
+            'table_header': '#E3F2FD',
+            'table_odd': '#F5F5F5',
+            'table_even': '#FFFFFF',
+            'table_border': '#DDDDDD',
+            'link': '#0366D6',
+            'visited_link': '#551A8B'
         }
         
-        # Colors for highlighting standardized machinery names
-        self.machinery_colors = {
-            'Main Engine': '#d4f1f9',  # Light blue
-            'Auxiliary Engine': '#d5f5e3',  # Light green
-            'Steering Gear': '#fcf3cf',  # Light yellow
-            'Pump': '#fae5d3',  # Light orange
-            'Compressor': '#ebdef0',  # Light purple
+        self.font_settings = {
+            'family': 'Arial, sans-serif',
+            'size_normal': '14px',
+            'size_header': '18px',
+            'size_title': '24px',
+            'size_subtitle': '20px'
+        }
+        
+        self.table_settings = {
+            'width': '100%',
+            'border_collapse': 'collapse',
+            'cell_padding': '8px',
+            'header_bg': self.color_scheme['table_header'],
+            'row_hover': '#F1F8E9'
         }
     
-    def style_dataframe(self, df, standardized_column=None, status_column='Status'):
-        """Apply styling to the DataFrame.
-        
-        Args:
-            df: The DataFrame to style
-            standardized_column: Column name containing standardized machinery names
-            status_column: Column name containing status information
-            
-        Returns:
-            Styled DataFrame
-        """
-        if df is None or df.empty:
-            return df
-        
-        # Create a copy to prevent warnings
-        styled_df = df.copy()
-        
-        # Define styling function for alternating row colors
-        def highlight_rows(row):
-            return ['background-color: #f5f5f5' if i % 2 == 0 else '' for i in range(len(row))]
-        
-        # Define styling function for standardized machinery names
-        def highlight_standardized(row):
-            if standardized_column and standardized_column in row:
-                machinery_name = str(row[standardized_column])
-                
-                # Check if any key in machinery_colors is in the machinery name
-                for key, color in self.machinery_colors.items():
-                    if key in machinery_name:
-                        return [f'background-color: {color}'] * len(row)
-                        
-                # Default light gray if no match
-                return ['background-color: #f9f9f9'] * len(row)
-            return [''] * len(row)
-        
-        # Define styling function for status
-        def highlight_status(row):
-            if status_column and status_column in row:
-                status = row[status_column]
-                color = self.status_colors.get(status, '')
-                return [f'color: {color}; font-weight: bold' if col == status_column else '' for col in row.index]
-            return [''] * len(row)
-        
-        # Apply styling
-        if standardized_column and standardized_column in styled_df.columns:
-            style_funcs = [highlight_standardized]
-        else:
-            style_funcs = [highlight_rows]
-        
-        if status_column and status_column in styled_df.columns:
-            style_funcs.append(highlight_status)
-        
-        # Style the dataframe with all applicable functions
-        for func in style_funcs:
-            styled_df = styled_df.style.apply(func, axis=1)
-        
-        return styled_df
+    def get_color_scheme(self):
+        """Get the current color scheme."""
+        return self.color_scheme
     
-    def highlight_critical(self, df, critical_column):
-        """Highlight critical machinery.
-        
-        Args:
-            df: The DataFrame to style
-            critical_column: Column name indicating if machinery is critical
-            
-        Returns:
-            Styled DataFrame
-        """
-        if df is None or df.empty or critical_column not in df.columns:
-            return df
-        
-        # Function to highlight critical rows
-        def highlight_critical_rows(row):
-            if row[critical_column]:
-                return ['background-color: #ffcccb'] * len(row)  # Light red for critical
-            return [''] * len(row)
-        
-        return df.style.apply(highlight_critical_rows, axis=1)
+    def get_font_settings(self):
+        """Get the current font settings."""
+        return self.font_settings
     
-    def highlight_differences(self, df, column1, column2):
-        """Highlight differences between two columns.
+    def get_table_settings(self):
+        """Get the current table settings."""
+        return self.table_settings
+    
+    def generate_html_styles(self, colors=None, fonts=None, tables=None):
+        """
+        Generate CSS styling for HTML reports.
         
         Args:
-            df: The DataFrame to style
-            column1: First column to compare
-            column2: Second column to compare
+            colors (dict, optional): Color scheme to use
+            fonts (dict, optional): Font settings to use
+            tables (dict, optional): Table settings to use
             
         Returns:
-            Styled DataFrame
+            str: CSS styles as a string
         """
-        if df is None or df.empty or column1 not in df.columns or column2 not in df.columns:
-            return df
-        
-        # Function to highlight differences
-        def highlight_diff(row):
-            styles = [''] * len(row)
-            col1_idx = df.columns.get_loc(column1)
-            col2_idx = df.columns.get_loc(column2)
+        if colors is None:
+            colors = self.color_scheme
+        if fonts is None:
+            fonts = self.font_settings
+        if tables is None:
+            tables = self.table_settings
             
-            # Compare values and highlight if different
-            if row[column1] != row[column2]:
-                styles[col1_idx] = 'background-color: #ffcccb'  # Light red
-                styles[col2_idx] = 'background-color: #ffcccb'  # Light red
-            
-            return styles
+        css = f"""
+        /* Global Styles */
+        body {{
+            font-family: {fonts['family']};
+            font-size: {fonts['size_normal']};
+            line-height: 1.6;
+            color: {colors['text']};
+            background-color: {colors['background']};
+            margin: 0;
+            padding: 20px;
+        }}
         
-        return df.style.apply(highlight_diff, axis=1)
+        /* Header Styles */
+        h1, h2, h3, h4, h5, h6 {{
+            color: {colors['primary']};
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }}
+        
+        h1 {{
+            font-size: {fonts['size_title']};
+            border-bottom: 2px solid {colors['primary']};
+            padding-bottom: 10px;
+            text-align: center;
+        }}
+        
+        h2 {{
+            font-size: {fonts['size_subtitle']};
+            border-bottom: 1px solid {colors['secondary']};
+            padding-bottom: 5px;
+        }}
+        
+        h3 {{
+            font-size: {fonts['size_header']};
+        }}
+        
+        /* Table Styles */
+        table {{
+            width: {tables['width']};
+            border-collapse: {tables['border_collapse']};
+            margin-bottom: 20px;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.1);
+        }}
+        
+        th {{
+            background-color: {tables['header_bg']};
+            color: {colors['text']};
+            font-weight: bold;
+            padding: {tables['cell_padding']};
+            text-align: left;
+            border: 1px solid {colors['table_border']};
+        }}
+        
+        td {{
+            padding: {tables['cell_padding']};
+            border: 1px solid {colors['table_border']};
+        }}
+        
+        tr:nth-child(even) {{
+            background-color: {colors['table_even']};
+        }}
+        
+        tr:nth-child(odd) {{
+            background-color: {colors['table_odd']};
+        }}
+        
+        tr:hover {{
+            background-color: {tables['row_hover']};
+        }}
+        
+        /* Navigation Styles */
+        .table-of-contents {{
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }}
+        
+        .table-of-contents ul {{
+            list-style-type: none;
+            padding-left: 20px;
+        }}
+        
+        .table-of-contents li {{
+            margin-bottom: 5px;
+        }}
+        
+        a {{
+            color: {colors['link']};
+            text-decoration: none;
+        }}
+        
+        a:hover {{
+            text-decoration: underline;
+        }}
+        
+        a:visited {{
+            color: {colors['visited_link']};
+        }}
+        
+        .table-nav {{
+            text-align: right;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }}
+        
+        /* Section Styles */
+        .section {{
+            margin-bottom: 30px;
+        }}
+        
+        .table-container {{
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }}
+        
+        /* Header and Footer Styles */
+        .report-header {{
+            margin-bottom: 30px;
+            text-align: center;
+        }}
+        
+        .vessel-info {{
+            display: inline-block;
+            text-align: left;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 0 auto;
+        }}
+        
+        .vessel-info p {{
+            margin: 5px 0;
+        }}
+        
+        .footer {{
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 10px;
+            border-top: 1px solid {colors['table_border']};
+            font-size: 0.9em;
+            color: #666;
+        }}
+        
+        /* Responsive Styles */
+        @media screen and (max-width: 768px) {{
+            body {{
+                padding: 10px;
+            }}
+            
+            table {{
+                display: block;
+                overflow-x: auto;
+            }}
+        }}
+        """
+        
+        return css
+    
+    def style_dataframe(self, df):
+        """
+        Apply styling to a dataframe for display.
+        
+        Args:
+            df (pandas.DataFrame): DataFrame to style
+            
+        Returns:
+            pandas.io.formats.style.Styler: Styled DataFrame
+        """
+        return df.style.set_properties(**{
+            'border': f'1px solid {self.color_scheme["table_border"]}',
+            'padding': self.table_settings['cell_padding'],
+            'text-align': 'left'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [
+                ('background-color', self.table_settings['header_bg']), 
+                ('color', self.color_scheme['text']),
+                ('font-weight', 'bold'),
+                ('padding', self.table_settings['cell_padding']),
+                ('border', f'1px solid {self.color_scheme["table_border"]}')
+            ]},
+            {'selector': 'tr:nth-child(even)', 'props': [
+                ('background-color', self.color_scheme['table_even'])
+            ]},
+            {'selector': 'tr:nth-child(odd)', 'props': [
+                ('background-color', self.color_scheme['table_odd'])
+            ]}
+        ])
